@@ -17,6 +17,12 @@ const config = {
 const maxLogSize = 10485760; // 10MB
 
 const nativeConsole = {};
+const loggers = {};
+
+let appenders = {};
+let defaultLogger = null;
+let categories = {};
+let hasRunInit = false;
 
 const getCategoriesConfig = (appenders, level) => {
 	return Object
@@ -31,25 +37,80 @@ const getCategoriesConfig = (appenders, level) => {
 	;
 };
 
-let appenders = {};
-let defaultLogger = null;
-let categories = {};
-let hasRunInit = false;
+const logSystem = {
+	init() {
+		try {
+			const {
+				logsDir,
+				daemon,
+				logLevel = 'INFO',
+				overrideConsole: override,
+			} = config;
 
-const reloadLoggerSystem = () => {
-	const ensureFilename = (object) => {
-		let name = object.filename;
-		if (!name) { return object; }
-		if (extname(name) !== 'log') { name += '.log'; }
-		object.filename = isAbsolute(name) ? name : join(config.logsDir, name);
+			if (daemon) { ensureDirSync(logsDir); }
+
+			Object.assign(
+				appenders,
+				daemon ? {
+					default: defaultAppenders.all,
+					out: defaultAppenders.out,
+					err: defaultAppenders.err,
+				} : {
+					default: defaultAppenders.con,
+				},
+			);
+
+			categories = getCategoriesConfig(appenders, logLevel);
+			this.reload();
+
+			if ((isUndefined(override) && daemon) || override === true) {
+				overrideConsole();
+			}
+
+			hasRunInit = true;
+		}
+		catch (err) {
+			console.error(err);
+			throw err;
+		}
+	},
+
+	reload() {
+		const ensureFilename = (object) => {
+			let name = object.filename;
+			if (!name) { return object; }
+			if (extname(name) !== 'log') { name += '.log'; }
+			object.filename = isAbsolute(name) ? name : join(config.logsDir, name);
+		};
+
+		Object.keys(appenders).forEach((appender) => {
+			ensureFilename(appender);
+			if (appender.appender) { ensureFilename(appender.appender); }
+		});
+
+		log4js.configure({ appenders, categories });
+	},
+};
+
+const createLazyLogger = (category) => {
+	let logger = null;
+	const cache = {};
+	const init = () => {
+		hasRunInit || logSystem.init();
+		return logger || (logger = log4js.getLogger(category));
 	};
-
-	Object.keys(appenders).forEach((appender) => {
-		ensureFilename(appender);
-		if (appender.appender) { ensureFilename(appender.appender); }
+	const createReflection = (name) => {
+		return cache[name] || (cache[name] = init()[name].bind(logger));
+	};
+	return (loggers[category] = {
+		init,
+		get trace() { return createReflection('trace'); },
+		get debug() { return createReflection('debug'); },
+		get info() { return createReflection('info'); },
+		get warn() { return createReflection('warn'); },
+		get error() { return createReflection('error'); },
+		get fatal() { return createReflection('fatal'); },
 	});
-
-	log4js.configure({ appenders, categories });
 };
 
 export const defaultAppenders = {
@@ -130,74 +191,25 @@ export function resetConsole() {
 	console.error = nativeConsole.error;
 }
 
-export async function overrideConsoleInRuntime(start, logger, filter) {
+export function overrideConsoleInRuntime(start, logger, filter) {
 	overrideConsole(logger, filter);
-	await start();
-	resetConsole();
-	config.overrideConsole && overrideConsole();
+	return Promise.resolve(start()).then(() => {
+		resetConsole();
+		config.overrideConsole && overrideConsole();
+	});
 }
 
-export const initLog = (customAppenders) => {
-	try {
-		const {
-			logsDir,
-			daemon,
-			logLevel = 'INFO',
-			overrideConsole: override,
-		} = config;
-
-		if (daemon) { ensureDirSync(logsDir); }
-
-		Object.assign(
-			appenders,
-			daemon ? {
-				default: defaultAppenders.all,
-				out: defaultAppenders.out,
-				err: defaultAppenders.err,
-			} : {
-				default: defaultAppenders.con,
-			},
-			customAppenders,
-		);
-
-		categories = getCategoriesConfig(appenders, logLevel);
-		reloadLoggerSystem();
-		// log4js.configure({ appenders, categories });
-
-		if ((isUndefined(override) && daemon) || override === true) {
-			overrideConsole();
-		}
-
-		hasRunInit = true;
-	}
-	catch (err) {
-		console.error(err);
-		throw err;
-	}
-};
-
-const lazyGetLogger = (category) => {
-	let logger = null;
-	const cache = {};
-	const init = () => {
-		hasRunInit || initLog();
-		return logger || (logger = log4js.getLogger(category));
-	};
-	const createReflection = (name) => {
-		return cache[name] || (cache[name] = init()[name].bind(logger));
-	};
-	return {
-		init,
-		get trace() { return createReflection('trace'); },
-		get debug() { return createReflection('debug'); },
-		get info() { return createReflection('info'); },
-		get warn() { return createReflection('warn'); },
-		get error() { return createReflection('error'); },
-		get fatal() { return createReflection('fatal'); },
-	};
-};
+export function getLogger(category) {
+	return loggers[category] || createLazyLogger(category);
+}
 
 export function createLogger(category, style = 'dim', options) {
+	if (loggers[category]) {
+		throw new Error(
+			`Failed to create logger: "${category}" has already exists.`
+		);
+	}
+
 	const { daemon, logLevel } = config;
 
 	const getStyledCategoryStr = () => {
@@ -240,14 +252,13 @@ export function createLogger(category, style = 'dim', options) {
 			level: logLevel,
 		};
 
-		reloadLoggerSystem();
+		logSystem.reload();
 		return log4js.getLogger(category);
 	}
 	else {
-		return lazyGetLogger(category);
+		return getLogger(category);
 	}
 }
 
-export const logger = defaultLogger = lazyGetLogger('out');
-export { logger as app };
+export const logger = defaultLogger = getLogger('out');
 export default logger;
