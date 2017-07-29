@@ -56,7 +56,21 @@ Create a custom logger.
 
 ###### Returns
 
-Returns a new `logger` instance.
+Returns a new `logger`.
+
+---
+
+#### getLogger(category)
+
+Get logger by category. If not found, it would return the default logger.
+
+###### Arguments
+
+1. `category` (String): Logger category.
+
+###### Returns
+
+Returns a `logger`.
 
 ---
 
