@@ -12,6 +12,7 @@
     "test": "cross-env NODE_ENV=development jest",
     "prebuild": "rimraf lib",
     "build": "babel src -d lib",
+    "watch:build": "babel -w src -d lib",
     "preversion": "yarn test && yarn build"
   },
   "author": "cap32",
