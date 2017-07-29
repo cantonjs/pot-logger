@@ -22,4 +22,5 @@ indent_size = 2
 trim_trailing_whitespace = true
 
 [*.md]
+tab_width = 2
 trim_trailing_whitespace = false
