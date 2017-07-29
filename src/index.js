@@ -6,15 +6,17 @@ import chalk from 'chalk';
 
 const isFunction = (src) => typeof src === 'function';
 const isUndefined = (src) => typeof src === 'undefined';
+const isObject = (src) => typeof src === 'object';
+
+const logLevel = 'INFO';
+const maxLogSize = 10485760; // 10MB
 
 const config = {
-	logLevel: 'INFO',
+	logLevel,
 	logsDir: resolve('.logs'),
 	daemon: false,
 	overrideConsole: false,
 };
-
-const maxLogSize = 10485760; // 10MB
 
 const nativeConsole = {};
 const loggers = {};
@@ -25,14 +27,15 @@ let categories = {};
 let hasRunInit = false;
 
 const getCategoriesConfig = (appenders, level) => {
+	const isLevelObject = isObject(level);
 	return Object
 		.keys(appenders)
-		.reduce((catetories, key) => {
-			catetories[key] = {
+		.reduce((categories, key) => {
+			categories[key] = {
 				appenders: [key],
-				level,
+				level: (isLevelObject ? level[key] : level) || logLevel,
 			};
-			return catetories;
+			return categories;
 		}, {})
 	;
 };
@@ -61,7 +64,7 @@ const logSystem = {
 			);
 
 			categories = getCategoriesConfig(appenders, logLevel);
-			this.reload();
+			this.reload({ deep: true });
 
 			if ((isUndefined(override) && daemon) || override === true) {
 				overrideConsole();
@@ -75,18 +78,20 @@ const logSystem = {
 		}
 	},
 
-	reload() {
-		const ensureFilename = (object) => {
-			let name = object.filename;
-			if (!name) { return object; }
-			if (extname(name) !== 'log') { name += '.log'; }
-			object.filename = isAbsolute(name) ? name : join(config.logsDir, name);
-		};
+	reload(options = {}) {
+		if (options.deep) {
+			const ensureFilename = (object) => {
+				let name = object.filename;
+				if (!name) { return object; }
+				if (extname(name) !== 'log') { name += '.log'; }
+				object.filename = isAbsolute(name) ? name : join(config.logsDir, name);
+			};
 
-		Object.keys(appenders).forEach((appender) => {
-			ensureFilename(appender);
-			if (appender.appender) { ensureFilename(appender.appender); }
-		});
+			Object.keys(appenders).forEach((appender) => {
+				ensureFilename(appender);
+				if (appender.appender) { ensureFilename(appender.appender); }
+			});
+		}
 
 		log4js.configure({ appenders, categories });
 	},
@@ -199,6 +204,20 @@ export function overrideConsoleInRuntime(start, logger, filter) {
 	});
 }
 
+export function setLevel(level = logLevel) {
+	const isLevelObject = isObject(level);
+	config.logLevel = level;
+	Object
+		.keys(categories)
+		.filter((key) => !isLevelObject || level.hasOwnProperty(key))
+		.forEach((key) => {
+			const category = categories[key];
+			category.level = isLevelObject ? level[key] : level;
+		})
+	;
+	logSystem.reload();
+}
+
 export function getLogger(category) {
 	return loggers[category] || createLazyLogger(category);
 }
@@ -252,7 +271,7 @@ export function createLogger(category, style = 'dim', options) {
 			level: logLevel,
 		};
 
-		logSystem.reload();
+		logSystem.reload({ deep: true });
 		return log4js.getLogger(category);
 	}
 	else {

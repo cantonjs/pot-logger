@@ -81,10 +81,23 @@ Initialize configure.
 ###### Arguments
 
 1. `config` (Object)
-  - `daemon` (Boolean): If `daemon` is `true`, loggers will use `*.log` files instead of `console`. Defaults to `false`.
-  - `logLevel` (String): Defining custom log levels. Defaults to "INFO". (`ALL` < `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR` < `FATAL` < `MARK` < `OFF`)
-  - `logsDir` (String): Defining log files dir. By default, log files will work only when `daemon` mod enabled. Defaults to `${cwd}/.logs/`.
-  - `overrideConsole` (Boolean): Override native `console` to `logger`. If `daemon` mod enabled, default value would be `true`, or it would be `false`.
+
+###### Avaliable config props
+
+- `daemon` (Boolean): If `daemon` is `true`, loggers will use `*.log` files instead of `console`. Defaults to `false`.
+- `logLevel` (String|Object): Defining custom log levels. You could set all categories by passing a level string. Or you could to set some individual categories by passing a key/value object. Defaults to "INFO". (`ALL` < `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR` < `FATAL` < `MARK` < `OFF`)
+- `logsDir` (String): Defining log files dir. By default, log files will work only when `daemon` mod enabled. Defaults to `${cwd}/.logs/`.
+- `overrideConsole` (Boolean): Override native `console` to `logger`. If `daemon` mod enabled, default value would be `true`, or it would be `false`.
+
+---
+
+#### setLevel([level])
+
+Set level. 
+
+###### Arguments
+
+1. `level` (String|Object): Set custom log levels. You could set all categories by passing a level string. Or you could to set some individual categories by passing a key/value object. Defaults to "INFO".
 
 ---
 
