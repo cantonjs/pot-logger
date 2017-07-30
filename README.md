@@ -4,6 +4,7 @@
 
 A logger system for pot-js or claypot.
 
+![screenshot](./screenshot.png)
 
 ## Getting Started
 
@@ -24,6 +25,20 @@ logger.info('虾饺');
 /* => INFO [food] 虾饺 */
 ```
 
+
+## Daemon
+
+By default, logger messages will finaly output by calling `console.log` to terminal, but if `daemon` mod enabled, logger messages will write to `*.log` files.
+
+By default, there are three logs files:
+
+- `out.log`: Default log file. Only valid log level messages will write to this file.
+- `err.log`: All `ERROR` or `FATAL` log level messages will write to this file.
+- `all.log`: All log level messages will write to this file.
+
+To enable `daemon` mod, run `initConfig({ daemon: true })`.
+
+
 ## Installation
 
 ```bash
@@ -43,6 +58,16 @@ Default logger. A logger is a little bit like `console`, it has these methods:
 - `warn` (yellow)
 - `error` (red)
 - `fatal` (magenta)
+
+
+###### Ways to import `logger` module
+
+```js
+import { logger } from 'pot-logger';
+import logger from 'pot-logger'; /* or */
+var logger = require('pot-logger').logger; /* or */
+var logger = require('pot-logger').default; /* or */
+```
 
 ---
 
