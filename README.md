@@ -1,6 +1,8 @@
 # pot-logger
 
-A logger system for pot-js or claypot
+[![Build Status](https://travis-ci.org/cantonjs/pot-logger.svg?branch=master)](https://travis-ci.org/cantonjs/pot-logger) [![CircleCI](https://circleci.com/gh/cantonjs/pot-logger.svg?style=svg)](https://circleci.com/gh/cantonjs/pot-logger)
+
+A logger system for pot-js or claypot.
 
 
 ## Getting Started
