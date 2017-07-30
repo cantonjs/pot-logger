@@ -260,19 +260,20 @@ describe('daemon', () => {
 		expect(/\[DEBUG\] out - hello\s*$/.test(all)).toBe(true);
 	});
 
-	// test('should `createLogger()` works', async () => {
-	// 	const { initConfig, createLogger } = requireSandbox();
-	// 	initConfig({ daemon: true, logsDir });
-	// 	const logger = createLogger('alt');
-	// 	logger.error('hello');
-	// 	await delay(100);
-	// 	const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
-	// 	const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
-	// 	const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
-	// 	expect(/\[ERROR\] alt - hello\s*$/.test(all)).toBe(true);
-	// 	expect(/\[ERROR\] alt - hello\s*$/.test(err)).toBe(true);
-	// 	expect(/\[ERROR\] alt - hello\s*$/.test(out)).toBe(true);
-	// });
+	test('should `createLogger()` works', async () => {
+		const { initConfig, createLogger, overrideConsole } = requireSandbox();
+		initConfig({ daemon: true, logsDir });
+		const logger = createLogger('alt');
+		overrideConsole();
+		logger.error('hello');
+		await delay(100);
+		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
+		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(/\[ERROR\] alt - hello\s*$/.test(all)).toBe(true);
+		expect(/\[ERROR\] alt - hello\s*$/.test(err)).toBe(true);
+		expect(/\[ERROR\] alt - hello\s*$/.test(out)).toBe(true);
+	});
 
 	test('should `setLevel()` works', async () => {
 		const { initConfig, logger, setLevel } = requireSandbox();

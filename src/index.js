@@ -62,78 +62,72 @@ const getCategoriesConfig = (appenders, level) => {
 	});
 };
 
-const logSystem = {
-	init() {
-		try {
-			const { daemon } = config;
+const reloadLogSystem = (options = {}) => {
+	if (options.deep) {
+		const { logsDir, logLevel } = config;
+		const appenderKeys = Object.keys(appenders);
 
-			Object.assign(
-				appenders,
-				daemon ? {
-					_all: defaultAppenders.all,
-					_err: defaultAppenders.err,
-					_out: defaultAppenders.out,
-				} : {
-					_out: defaultAppenders.con,
-				},
-			);
+		const ensureFilename = (appender) => {
+			let name = appender.filename;
+			if (!name) { return appender; }
+			if (extname(name) !== '.log') { name += '.log'; }
+			appender.filename = isAbsolute(name) ? name : join(logsDir, name);
+		};
 
-			this.reload({ deep: true });
+		const ensureLevelAppender = (key) => {
+			if (key.charAt(0) === '$') { return; }
+			const $key = '$' + key;
+			if (appenderKeys.indexOf($key) > -1) { return; }
 
-			hasRunInit = true;
-		}
-		catch (err) {
-			console.error(err);
-			throw err;
-		}
-	},
-
-	reload(options = {}) {
-		if (options.deep) {
-			const { logsDir, logLevel } = config;
-			const appenderKeys = Object.keys(appenders);
-
-			const ensureFilename = (appender) => {
-				let name = appender.filename;
-				if (!name) { return appender; }
-				if (extname(name) !== 'log') { name += '.log'; }
-				appender.filename = isAbsolute(name) ? name : join(logsDir, name);
+			appenders[$key] = {
+				type: 'logLevelFilter',
+				appender: key,
+				level: (function () {
+					if (key === '_err') { return 'ERROR'; }
+					if (key === '_all') { return 'ALL'; }
+					return getLevel(key, logLevel, defaultLogLevel);
+				}()),
 			};
+		};
 
-			const ensureLevelAppender = (key) => {
-				if (key.charAt(0) === '$') { return; }
-				const $key = '$' + key;
-				if (appenderKeys.indexOf($key) > -1) { return; }
+		appenderKeys.forEach((key) => {
+			const appender = appenders[key];
+			ensureFilename(appender);
+			ensureLevelAppender(key);
+		});
 
-				appenders[$key] = {
-					type: 'logLevelFilter',
-					appender: key,
-					level: (function () {
-						if (key === '_err') { return 'ERROR'; }
-						if (key === '_all') { return 'ALL'; }
-						return getLevel(key, logLevel, defaultLogLevel);
-					}()),
-				};
-			};
+		categories = getCategoriesConfig(appenders, logLevel);
+	}
 
-			appenderKeys.forEach((key) => {
-				const appender = appenders[key];
-				ensureFilename(appender);
-				ensureLevelAppender(key);
-			});
+	log4js.configure({ appenders, categories });
+};
 
-			categories = getCategoriesConfig(appenders, logLevel);
-		}
+const initLogSystem = () => {
+	if (hasRunInit) { return; }
 
-		log4js.configure({ appenders, categories });
-	},
+	const { daemon } = config;
+
+	Object.assign(
+		appenders,
+		daemon ? {
+			_all: defaultAppenders.all,
+			_err: defaultAppenders.err,
+			_out: defaultAppenders.out,
+		} : {
+			_out: defaultAppenders.con,
+		},
+	);
+
+	reloadLogSystem({ deep: true });
+
+	hasRunInit = true;
 };
 
 const createLazyLogger = (category) => {
 	let logger = null;
 	const cache = {};
 	const init = () => {
-		hasRunInit || logSystem.init();
+		hasRunInit || initLogSystem();
 		return logger || (logger = log4js.getLogger(category));
 	};
 	const createReflection = (name) => {
@@ -234,7 +228,7 @@ export function setLevel(level = defaultLogLevel) {
 			}
 		})
 	;
-	logSystem.reload();
+	reloadLogSystem();
 }
 
 export function getLogger(category) {
@@ -287,7 +281,7 @@ export function createLogger(category, style = 'dim', options) {
 			level: logLevel || defaultLogLevel,
 		};
 
-		logSystem.reload({ deep: true });
+		reloadLogSystem({ deep: true });
 		return log4js.getLogger(category);
 	}
 	else {
