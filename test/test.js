@@ -1,6 +1,11 @@
 
-import { requireSandbox } from './utils';
+import { join } from 'path';
+import { pathExists, remove, readFile } from 'fs-extra';
+import { build, requireSandbox } from './utils';
 import stripAnsi from 'strip-ansi';
+import delay from 'delay';
+
+beforeAll(build);
 
 describe('logger', () => {
 	test('should `info()` works', () => {
@@ -87,7 +92,7 @@ describe('getLogger', () => {
 	});
 });
 
-describe('log level', () => {
+describe('levels', () => {
 	test('default level should be "INFO"', () => {
 		const log = jest.fn();
 		const { logger } = requireSandbox({ console: { log } });
@@ -190,5 +195,104 @@ describe('overrideConsole', () => {
 		expect(log.mock.calls[0][0]).toBe('a');
 		expect(stripAnsi(log.mock.calls[1][0])).toBe('INFO b');
 		expect(log.mock.calls[2][0]).toBe('c');
+	});
+});
+
+describe('daemon', () => {
+	const logsDir = join(__dirname, 'logs');
+
+	const removeLogsDir = async () => {
+		await remove(logsDir);
+	};
+
+	beforeEach(removeLogsDir);
+	afterEach(removeLogsDir);
+
+	test('should create `*.log` files', async () => {
+		const { initConfig, logger } = requireSandbox();
+		initConfig({ daemon: true, logsDir, });
+		logger.info('hello');
+		await delay(100);
+		const out = await pathExists(join(logsDir, 'out.log'));
+		const err = await pathExists(join(logsDir, 'err.log'));
+		const all = await pathExists(join(logsDir, 'all.log'));
+		expect(out).toBe(true);
+		expect(err).toBe(true);
+		expect(all).toBe(true);
+	});
+
+	test('should not append to `err.log` by calling `info()`', async () => {
+		const { initConfig, logger } = requireSandbox();
+		initConfig({ daemon: true, logsDir });
+		logger.info('hello');
+		await delay(100);
+		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
+		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(/\[INFO\] out - hello\s*$/.test(out)).toBe(true);
+		expect(/\[INFO\] out - hello\s*$/.test(all)).toBe(true);
+		expect(/^\s*$/.test(err)).toBe(true);
+	});
+
+	test('should append to all `.log` files by calling `error()`', async () => {
+		const { initConfig, logger } = requireSandbox();
+		initConfig({ daemon: true, logsDir });
+		logger.error('hello');
+		await delay(100);
+		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
+		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(/\[ERROR\] out - hello\s*$/.test(out)).toBe(true);
+		expect(/\[ERROR\] out - hello\s*$/.test(err)).toBe(true);
+		expect(/\[ERROR\] out - hello\s*$/.test(all)).toBe(true);
+	});
+
+	test('should only append to `all.log` by calling `debug()`', async () => {
+		const { initConfig, logger } = requireSandbox();
+		initConfig({ daemon: true, logsDir });
+		logger.debug('hello');
+		await delay(100);
+		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
+		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(/^\s*$/.test(out)).toBe(true);
+		expect(/^\s*$/.test(err)).toBe(true);
+		expect(/\[DEBUG\] out - hello\s*$/.test(all)).toBe(true);
+	});
+
+	// test('should `createLogger()` works', async () => {
+	// 	const { initConfig, createLogger } = requireSandbox();
+	// 	initConfig({ daemon: true, logsDir });
+	// 	const logger = createLogger('alt');
+	// 	logger.error('hello');
+	// 	await delay(100);
+	// 	const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
+	// 	const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+	// 	const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+	// 	expect(/\[ERROR\] alt - hello\s*$/.test(all)).toBe(true);
+	// 	expect(/\[ERROR\] alt - hello\s*$/.test(err)).toBe(true);
+	// 	expect(/\[ERROR\] alt - hello\s*$/.test(out)).toBe(true);
+	// });
+
+	test('should `setLevel()` works', async () => {
+		const { initConfig, logger, setLevel } = requireSandbox();
+		initConfig({ daemon: true, logsDir });
+		logger.trace('a');
+		setLevel('TRACE');
+		logger.trace('b');
+		await delay(100);
+		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+		expect(/\[TRACE\] out - b\s*$/.test(out)).toBe(true);
+	});
+
+	test('should `overrideConsole()` works', async () => {
+		const log = jest.fn();
+		const fakeConsole = { log };
+		const { initConfig } = requireSandbox({ console: fakeConsole });
+		initConfig({ daemon: true, logsDir, overrideConsole: true });
+		fakeConsole.log('hello');
+		await delay(100);
+		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
+		expect(/\[INFO\] out - hello\s*$/.test(out)).toBe(true);
 	});
 });

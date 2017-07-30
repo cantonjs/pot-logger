@@ -1,6 +1,5 @@
 
 import log4js from 'log4js';
-import { ensureDirSync } from 'fs-extra';
 import { join, resolve, isAbsolute, extname } from 'path';
 import chalk from 'chalk';
 
@@ -8,14 +7,20 @@ const isFunction = (src) => typeof src === 'function';
 const isUndefined = (src) => typeof src === 'undefined';
 const isObject = (src) => typeof src === 'object';
 
-const logLevel = 'INFO';
-const maxLogSize = 10485760; // 10MB
+const defaultLogLevel = 'INFO';
+const defaultFileAppender = {
+	type: 'file',
+	filename: 'out',
+	maxLogSize: 10485760, // 10MB
+	backups: 5,
+	compress: true,
+};
 
 const config = {
-	logLevel,
+	logLevel: defaultLogLevel,
 	logsDir: resolve('.logs'),
 	daemon: false,
-	overrideConsole: false,
+	// overrideConsole: false,
 };
 
 const nativeConsole = {};
@@ -26,49 +31,54 @@ let defaultLogger = null;
 let categories = {};
 let hasRunInit = false;
 
+const getLevel = (key, level, defaultLevel) =>
+	(isObject(level) ? level[key] : level) || defaultLevel
+;
+
 const getCategoriesConfig = (appenders, level) => {
-	const isLevelObject = isObject(level);
-	return Object
-		.keys(appenders)
-		.reduce((categories, key) => {
-			categories[key] = {
-				appenders: [key],
-				level: (isLevelObject ? level[key] : level) || logLevel,
-			};
-			return categories;
-		}, {})
-	;
+	const appenderKeys = Object.keys(appenders);
+
+	const builtInLevelAppenders = [];
+	if (appenders['$_all']) { builtInLevelAppenders.push('$_all'); }
+	if (appenders['$_err']) { builtInLevelAppenders.push('$_err'); }
+
+	return appenderKeys.reduce((categories, key) => {
+		const isCustomKey = !/^[$_]/.test(key);
+		if (isCustomKey && appenders.hasOwnProperty('$' + key)) {
+			const $key = '$' + key;
+			if (appenders.hasOwnProperty($key)) {
+				categories[key] = {
+					appenders: [$key, ...builtInLevelAppenders],
+					level: 'ALL',
+				};
+			}
+		}
+		return categories;
+	}, {
+		default: {
+			appenders: ['$_out', ...builtInLevelAppenders],
+			level: 'ALL',
+		},
+	});
 };
 
 const logSystem = {
 	init() {
 		try {
-			const {
-				logsDir,
-				daemon,
-				logLevel = 'INFO',
-				overrideConsole: override,
-			} = config;
-
-			if (daemon) { ensureDirSync(logsDir); }
+			const { daemon } = config;
 
 			Object.assign(
 				appenders,
 				daemon ? {
-					default: defaultAppenders.all,
-					out: defaultAppenders.out,
-					err: defaultAppenders.err,
+					_all: defaultAppenders.all,
+					_err: defaultAppenders.err,
+					_out: defaultAppenders.out,
 				} : {
-					default: defaultAppenders.con,
+					_out: defaultAppenders.con,
 				},
 			);
 
-			categories = getCategoriesConfig(appenders, logLevel);
 			this.reload({ deep: true });
-
-			if ((isUndefined(override) && daemon) || override === true) {
-				overrideConsole();
-			}
 
 			hasRunInit = true;
 		}
@@ -80,17 +90,39 @@ const logSystem = {
 
 	reload(options = {}) {
 		if (options.deep) {
-			const ensureFilename = (object) => {
-				let name = object.filename;
-				if (!name) { return object; }
+			const { logsDir, logLevel } = config;
+			const appenderKeys = Object.keys(appenders);
+
+			const ensureFilename = (appender) => {
+				let name = appender.filename;
+				if (!name) { return appender; }
 				if (extname(name) !== 'log') { name += '.log'; }
-				object.filename = isAbsolute(name) ? name : join(config.logsDir, name);
+				appender.filename = isAbsolute(name) ? name : join(logsDir, name);
 			};
 
-			Object.keys(appenders).forEach((appender) => {
+			const ensureLevelAppender = (key) => {
+				if (key.charAt(0) === '$') { return; }
+				const $key = '$' + key;
+				if (appenderKeys.indexOf($key) > -1) { return; }
+
+				appenders[$key] = {
+					type: 'logLevelFilter',
+					appender: key,
+					level: (function () {
+						if (key === '_err') { return 'ERROR'; }
+						if (key === '_all') { return 'ALL'; }
+						return getLevel(key, logLevel, defaultLogLevel);
+					}()),
+				};
+			};
+
+			appenderKeys.forEach((key) => {
+				const appender = appenders[key];
 				ensureFilename(appender);
-				if (appender.appender) { ensureFilename(appender.appender); }
+				ensureLevelAppender(key);
 			});
+
+			categories = getCategoriesConfig(appenders, logLevel);
 		}
 
 		log4js.configure({ appenders, categories });
@@ -120,34 +152,15 @@ const createLazyLogger = (category) => {
 
 export const defaultAppenders = {
 	out: {
-		type: 'file',
-		filename: 'out',
-		level: 'INFO',
-		maxLogSize,
-		backups: 3,
-		compress: true,
+		...defaultFileAppender,
 	},
 	err: {
-		type: 'logLevelFilter',
-		level: 'ERROR',
-		appender: {
-			type: 'file',
-			filename: 'err',
-			maxLogSize,
-			backups: 3,
-			compress: true,
-		},
+		...defaultFileAppender,
+		filename: 'err',
 	},
 	all: {
-		type: 'logLevelFilter',
-		level: 'ALL',
-		appender: {
-			type: 'file',
-			filename: 'all',
-			maxLogSize,
-			backups: 3,
-			compress: true,
-		},
+		...defaultFileAppender,
+		filename: 'all',
 	},
 	con: {
 		type: 'console',
@@ -160,6 +173,10 @@ export const defaultAppenders = {
 
 export function initConfig(customConfig) {
 	Object.assign(config, customConfig);
+	const { daemon, overrideConsole: override } = config;
+	if ((isUndefined(override) && daemon) || override) {
+		overrideConsole();
+	}
 }
 
 export function overrideConsole(lazyLogger = defaultLogger, filter) {
@@ -204,15 +221,17 @@ export function overrideConsoleInRuntime(start, logger, filter) {
 	});
 }
 
-export function setLevel(level = logLevel) {
-	const isLevelObject = isObject(level);
+export function setLevel(level = defaultLogLevel) {
 	config.logLevel = level;
 	Object
-		.keys(categories)
-		.filter((key) => !isLevelObject || level.hasOwnProperty(key))
+		.keys(appenders)
 		.forEach((key) => {
-			const category = categories[key];
-			category.level = isLevelObject ? level[key] : level;
+			const $key = '$' + key;
+			const levelAppender = appenders[$key];
+			if (levelAppender) {
+				const newLevel = getLevel(key, level);
+				newLevel && (levelAppender.level = newLevel);
+			}
 		})
 	;
 	logSystem.reload();
@@ -253,10 +272,7 @@ export function createLogger(category, style = 'dim', options) {
 	};
 
 	appenders[category] = options || (daemon ? {
-		type: 'file',
-		filename: 'out',
-		maxLogSize,
-		backups: 0,
+		...defaultFileAppender,
 	} : {
 		type: 'console',
 		layout: {
@@ -268,7 +284,7 @@ export function createLogger(category, style = 'dim', options) {
 	if (hasRunInit) {
 		categories[category] = {
 			appenders: [category],
-			level: logLevel,
+			level: logLevel || defaultLogLevel,
 		};
 
 		logSystem.reload({ deep: true });
