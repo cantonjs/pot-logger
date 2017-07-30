@@ -20,7 +20,14 @@
   "engines": {
     "node": ">=4"
   },
-  "keywords": [],
+  "keywords": [
+    "console",
+    "logger",
+    "level",
+    "pot",
+    "claypot",
+    "daemon"
+  ],
   "licenses": "MIT",
   "dependencies": {
     "chalk": "^2.0.1",
