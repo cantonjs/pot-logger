@@ -3,6 +3,7 @@ import { join } from 'path';
 import { pathExists, remove, readFile } from 'fs-extra';
 import { build, requireSandbox } from './utils';
 import stripAnsi from 'strip-ansi';
+import chalk from 'chalk';
 import delay from 'delay';
 
 beforeAll(build);
@@ -66,7 +67,7 @@ describe('logger', () => {
 });
 
 describe('createLogger', () => {
-	test('should `createLogger()` work with default appender', () => {
+	test('default appender', () => {
 		const category = 'hello';
 		const message = 'world';
 		const log = jest.fn();
@@ -77,22 +78,72 @@ describe('createLogger', () => {
 		expect(stripAnsi(arg)).toBe(`INFO [${category}] ${message}`);
 	});
 
-	test('should `createLogger()` work with custom appender', () => {
+	test('custom appender object', () => {
 		const category = 'hello';
 		const message = 'world';
 		const prefix = 'My custom logger -';
 		const log = jest.fn();
 		const { createLogger } = requireSandbox({ console: { log } });
-		const logger = createLogger(category, 0, () => ({
+		const logger = createLogger(category, {
 			type: 'console',
 			layout: {
 				type: 'pattern',
 				pattern: `${prefix} %m`,
 			},
-		}));
+		});
 		logger.info(message);
 		const arg = log.mock.calls[0][0];
 		expect(stripAnsi(arg)).toBe(`${prefix} ${message}`);
+	});
+
+	test('custom appender function', () => {
+		const category = 'hello';
+		const message = 'world';
+		const prefix = 'My custom logger -';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, (ref) => {
+			expect(ref.category).toBe(category);
+			expect(ref.daemon).toBe(false);
+			expect(typeof ref.defaultDaemonAppender).toBe('object');
+			expect(typeof ref.defaultConsoleAppender).toBe('object');
+			return {
+				type: 'console',
+				layout: {
+					type: 'pattern',
+					pattern: `${prefix} %m`,
+				},
+			};
+		});
+		logger.info(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`${prefix} ${message}`);
+	});
+
+	test('colored appender', () => {
+		const category = 'hello';
+		const message = 'world';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, 'red');
+		logger.info(message);
+		const arg = log.mock.calls[0][0];
+		expect(arg).toBe(
+			`${chalk.green('INFO')} ${chalk.red(`[${category}]`)} ${message}`
+		);
+	});
+
+	test('dot notation colored appender', () => {
+		const category = 'hello';
+		const message = 'world';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, 'red.bold');
+		logger.info(message);
+		const arg = log.mock.calls[0][0];
+		expect(arg).toBe(
+			`${chalk.green('INFO')} ${chalk.red.bold(`[${category}]`)} ${message}`
+		);
 	});
 });
 

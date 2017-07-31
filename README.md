@@ -71,19 +71,34 @@ var logger = require('pot-logger').default; /* or */
 
 ---
 
-#### createLogger(category[, color, appender])
+#### createLogger(category[, appenderDescription])
 
 Create a custom logger.
 
 ###### Arguments
 
 1. `category` (String): Logger category.
-2. `color` (String): Category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Defaults to `gray`.
-3. `appender` (Object): [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender.
+2. `appenderDescription` (String|Object|Function):
+    - (String): Category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Supports dot notation (i.e. `red.bold`).
+    - (Object): [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender.
+    - (Function): A function that should return an [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender. The only argument of this function is a `ref` object
+        + `category` (String)
+        + `daemon` (Boolean)
+        + `defaultDaemonAppender` (Object)
+        + `defaultConsoleAppender` (Object)
 
 ###### Returns
 
 Returns a new `logger`.
+
+###### Example
+
+```js
+import { createLogger } from 'pot-logger';
+const logger = createLogger('test', (ref) => {
+    return ref.daemon ? ref.defaultDaemonAppender : ref.defaultConsoleAppender;
+});
+```
 
 ---
 

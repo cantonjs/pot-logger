@@ -5,6 +5,7 @@ import chalk from 'chalk';
 
 const isFunction = (src) => typeof src === 'function';
 const isObject = (src) => typeof src === 'object';
+const isString = (src) => typeof src === 'string';
 
 const defaultCategory = 'out';
 const defaultLogLevel = 'INFO';
@@ -311,66 +312,66 @@ export function getLogger(category) {
 	return logSystem.getLogger(category);
 }
 
-export function createLogger(category, style, getAppender) {
-	if (!style) { style = 'dim'; }
-
+export function createLogger(category, description) {
 	if (logSystem.hasLogger(category)) {
 		throw new Error(
 			`Failed to create logger: "${category}" has already exists.`
 		);
 	}
 
-	const getStyledCategoryStr = () => {
-		const pattern = '[%c]';
-		const validatColor = (style) => {
-			if (!isFunction(chalk[style])) {
-				throw new Error(`Category with style "${style}" is NOT support.`);
-			}
-		};
+	if (isObject(description)) {
+		logSystem.appenders[category] = description;
+	}
+	else {
+		let style = 'dim';
 
-		if (Array.isArray(style)) {
-			const getStyle = style.reduce((chalkChaining, color) => {
+		if (isString(description)) { style = description; }
+
+		const getStyledCategoryStr = () => {
+			const pattern = '[%c]';
+			const validatColor = (style) => {
+				if (!isFunction(chalk[style])) {
+					throw new Error(`Category with style "${style}" is NOT support.`);
+				}
+			};
+
+			const getStyle = style.split('.').reduce((chalkChaining, color) => {
 				validatColor(color);
-				return chalkChaining[color].bind(chalkChaining);
+				return chalkChaining[color];
 			}, chalk);
 			return getStyle(pattern);
-		}
-		else {
-			validatColor(style);
-			return chalk[style](pattern);
-		}
-	};
+		};
 
-	const ref = {
-		category,
-		get daemon() {
-			return config.daemon;
-		},
-		get defaultDaemonAppender() {
-			return { ...defaultFileAppender };
-		},
-		get defaultConsoleAppender() {
-			return {
-				type: 'console',
-				layout: {
-					type: 'pattern',
-					pattern: `%[%p%] ${getStyledCategoryStr()} %m`,
-				},
-			};
-		},
-	};
+		const ref = {
+			category,
+			get daemon() {
+				return config.daemon;
+			},
+			get defaultDaemonAppender() {
+				return { ...defaultFileAppender };
+			},
+			get defaultConsoleAppender() {
+				return {
+					type: 'console',
+					layout: {
+						type: 'pattern',
+						pattern: `%[%p%] ${getStyledCategoryStr()} %m`,
+					},
+				};
+			},
+		};
 
-	logSystem.appenders[category] = () => {
-		if (isFunction(getAppender)) { return getAppender(ref); }
-		const { daemon } = config;
-		return ref[daemon ? 'defaultDaemonAppender' : 'defaultConsoleAppender'];
-	};
+		logSystem.appenders[category] = () => {
+			if (isFunction(description)) { return description(ref); }
+			const { daemon } = config;
+			return ref[daemon ? 'defaultDaemonAppender' : 'defaultConsoleAppender'];
+		};
+	}
 
 	logSystem.requestUpdateAppenders();
 	logSystem.requestUpdateCategories();
-
 	return logSystem.getLogger(category);
 }
 
-export const logger = createLogger(defaultCategory, 0, () => defaultAppenders.con);
+export const logger = createLogger(defaultCategory, defaultAppenders.con);
 export default logger;
