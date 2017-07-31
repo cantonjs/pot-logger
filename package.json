@@ -1,7 +1,7 @@
 {
   "name": "pot-logger",
   "description": "A logger system for pot-js or claypot",
-  "version": "0.0.0-0",
+  "version": "0.0.0",
   "main": "lib/index",
   "files": [
     "*.md",
