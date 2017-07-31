@@ -4,13 +4,13 @@ import { join, resolve, isAbsolute, extname } from 'path';
 import chalk from 'chalk';
 
 const isFunction = (src) => typeof src === 'function';
-const isUndefined = (src) => typeof src === 'undefined';
 const isObject = (src) => typeof src === 'object';
 
+const defaultCategory = 'out';
 const defaultLogLevel = 'INFO';
 const defaultFileAppender = {
 	type: 'file',
-	filename: 'out',
+	filename: defaultCategory,
 	maxLogSize: 10485760, // 10MB
 	backups: 5,
 	compress: true,
@@ -20,50 +20,53 @@ const config = {
 	logLevel: defaultLogLevel,
 	logsDir: resolve('.logs'),
 	daemon: false,
-	// overrideConsole: false,
+	overrideConsole: false,
 };
 
 const nativeConsole = {};
-const loggers = {};
-
-let appenders = {};
-let defaultLogger = null;
-let categories = {};
-let hasRunInit = false;
 
 const getLevel = (key, level, defaultLevel) =>
 	(isObject(level) ? level[key] : level) || defaultLevel
 ;
 
-const getCategoriesConfig = (appenders, level) => {
-	const appenderKeys = Object.keys(appenders);
+const logSystem = (function () {
+	let shouldReload = false;
+	let shouldUpdateDaemon = false;
+	let shouldUpdateAppenders = false;
+	let shouldUpdateCategories = false;
+	let shouldReloadConfigure = false;
+	let appenders = {};
+	let categories = {};
+	const loggers = {};
 
-	const builtInLevelAppenders = [];
-	if (appenders['$_all']) { builtInLevelAppenders.push('$_all'); }
-	if (appenders['$_err']) { builtInLevelAppenders.push('$_err'); }
+	const getCategories = () => {
+		const appenderKeys = Object.keys(appenders);
 
-	return appenderKeys.reduce((categories, key) => {
-		const isCustomKey = !/^[$_]/.test(key);
-		if (isCustomKey && appenders.hasOwnProperty('$' + key)) {
+		const builtInLevelAppenders = [];
+		if (appenders['$_all']) { builtInLevelAppenders.push('$_all'); }
+		if (appenders['$_err']) { builtInLevelAppenders.push('$_err'); }
+
+		return appenderKeys.reduce((categories, key) => {
+			const isCustomKey = !/^[$_]/.test(key);
 			const $key = '$' + key;
-			if (appenders.hasOwnProperty($key)) {
+			if (isCustomKey && appenders[$key]) {
 				categories[key] = {
 					appenders: [$key, ...builtInLevelAppenders],
 					level: 'ALL',
 				};
 			}
-		}
-		return categories;
-	}, {
-		default: {
-			appenders: ['$_out', ...builtInLevelAppenders],
-			level: 'ALL',
-		},
-	});
-};
+			return categories;
+		}, {
+			default: {
+				appenders: [`$${defaultCategory}`, ...builtInLevelAppenders],
+				level: 'ALL',
+			},
+		});
+	};
 
-const reloadLogSystem = (options = {}) => {
-	if (options.deep) {
+	const performUpdateAppenders = () => {
+		if (!shouldUpdateAppenders) { return; }
+
 		const { logsDir, logLevel } = config;
 		const appenderKeys = Object.keys(appenders);
 
@@ -91,58 +94,116 @@ const reloadLogSystem = (options = {}) => {
 		};
 
 		appenderKeys.forEach((key) => {
-			const appender = appenders[key];
+			let appender = appenders[key];
+
+			// lazy appender
+			if (isFunction(appender)) { appenders[key] = appender = appender(); }
+
 			ensureFilename(appender);
 			ensureLevelAppender(key);
 		});
 
-		categories = getCategoriesConfig(appenders, logLevel);
-	}
+		shouldUpdateAppenders = false;
+	};
 
-	log4js.configure({ appenders, categories });
-};
+	const performUpdateCategories = () => {
+		if (!shouldUpdateCategories) { return; }
+		categories = getCategories();
+		shouldUpdateCategories = false;
+	};
 
-const initLogSystem = () => {
-	if (hasRunInit) { return; }
+	const performUpdateDaemon = () => {
+		if (!shouldUpdateDaemon) { return; }
 
-	const { daemon } = config;
+		if (config.daemon) {
+			Object.assign(appenders, {
+				_all: defaultAppenders.all,
+				_err: defaultAppenders.err,
+				[defaultCategory]: defaultAppenders.out,
+			});
+		}
+		else {
+			Reflect.deleteProperty(appenders, '_all');
+			Reflect.deleteProperty(appenders, '_err');
+			Reflect.deleteProperty(appenders, '$_all');
+			Reflect.deleteProperty(appenders, '$_err');
+			appenders[defaultCategory] = defaultAppenders.con;
+		}
+		shouldUpdateDaemon = false;
+	};
 
-	Object.assign(
-		appenders,
-		daemon ? {
-			_all: defaultAppenders.all,
-			_err: defaultAppenders.err,
-			_out: defaultAppenders.out,
-		} : {
-			_out: defaultAppenders.con,
+	const performReloadConfigure = () => {
+		if (!shouldReloadConfigure) { return; }
+		log4js.configure({ appenders, categories });
+		shouldReloadConfigure = false;
+	};
+
+	return {
+		get shouldReload() {
+			return shouldReload;
 		},
-	);
+		get appenders() {
+			return appenders;
+		},
+		requestUpdateDaemon() {
+			shouldUpdateDaemon = true;
+			shouldUpdateAppenders = true;
+			shouldUpdateCategories = true;
+			shouldReloadConfigure = true;
+			shouldReload = true;
+		},
+		requestUpdateAppenders() {
+			shouldUpdateAppenders = true;
+			shouldReloadConfigure = true;
+			shouldReload = true;
+		},
+		requestUpdateCategories() {
+			shouldUpdateCategories = true;
+			shouldReloadConfigure = true;
+			shouldReload = true;
+		},
+		requestReloadConfigure() {
+			shouldReloadConfigure = true;
+			shouldReload = true;
+		},
+		reload() {
+			if (shouldReload) {
+				performUpdateDaemon();
+				performUpdateAppenders();
+				performUpdateCategories();
+				performReloadConfigure();
+				shouldReload = false;
+			}
+		},
+		hasLogger(category) {
+			return !!loggers[category];
+		},
+		getLogger(category = defaultCategory) {
+			if (loggers[category]) { return loggers[category]; }
 
-	reloadLogSystem({ deep: true });
+			const init = () => {
+				this.reload();
+				return log4js.getLogger(category);
+			};
 
-	hasRunInit = true;
-};
+			// TODO: should cache result
+			const reflect = (name) => {
+				const logger = init();
+				return logger[name].bind(logger);
+			};
 
-const createLazyLogger = (category) => {
-	let logger = null;
-	const cache = {};
-	const init = () => {
-		hasRunInit || initLogSystem();
-		return logger || (logger = log4js.getLogger(category));
+			return (loggers[category] = {
+				init,
+				get trace() { return reflect('trace'); },
+				get debug() { return reflect('debug'); },
+				get info() { return reflect('info'); },
+				get warn() { return reflect('warn'); },
+				get error() { return reflect('error'); },
+				get fatal() { return reflect('fatal'); },
+			});
+		},
 	};
-	const createReflection = (name) => {
-		return cache[name] || (cache[name] = init()[name].bind(logger));
-	};
-	return (loggers[category] = {
-		init,
-		get trace() { return createReflection('trace'); },
-		get debug() { return createReflection('debug'); },
-		get info() { return createReflection('info'); },
-		get warn() { return createReflection('warn'); },
-		get error() { return createReflection('error'); },
-		get fatal() { return createReflection('fatal'); },
-	});
-};
+}());
 
 export const defaultAppenders = {
 	out: {
@@ -165,16 +226,36 @@ export const defaultAppenders = {
 	},
 };
 
-export function initConfig(customConfig) {
-	Object.assign(config, customConfig);
-	const { daemon, overrideConsole: override } = config;
-	if ((isUndefined(override) && daemon) || override) {
+export function setConfig(maybeKey, maybeVal) {
+	const prev = { ...config };
+
+	Object.assign(
+		config,
+		isObject(maybeKey) ? maybeKey : ({ [maybeKey]: maybeVal }),
+	);
+
+	if (prev.daemon !== config.daemon) {
+		logSystem.requestUpdateDaemon();
+	}
+
+	if (prev.logLevel !== config.logLevel) {
+		setLevel(config.logLevel);
+	}
+
+	if (prev.logsDir !== config.logsDir) {
+		logSystem.requestUpdateAppenders();
+	}
+
+	if (prev.overrideConsole && !config.overrideConsole) {
+		resetConsole();
+	}
+	else if (!prev.overrideConsole && config.overrideConsole) {
 		overrideConsole();
 	}
 }
 
-export function overrideConsole(lazyLogger = defaultLogger, filter) {
-	const logger = lazyLogger.init ? lazyLogger.init() : lazyLogger;
+export function overrideConsole(logger = logSystem.getLogger(), filter) {
+	logger = logger.init ? logger.init() : logger;
 
 	const createReflection = (method) => {
 		return (...args) => {
@@ -218,37 +299,37 @@ export function overrideConsoleInRuntime(start, logger, filter) {
 export function setLevel(level = defaultLogLevel) {
 	config.logLevel = level;
 	Object
-		.keys(appenders)
+		.keys(logSystem.appenders)
 		.forEach((key) => {
 			const $key = '$' + key;
-			const levelAppender = appenders[$key];
+			const levelAppender = logSystem.appenders[$key];
 			if (levelAppender) {
 				const newLevel = getLevel(key, level);
 				newLevel && (levelAppender.level = newLevel);
 			}
 		})
 	;
-	reloadLogSystem();
+	logSystem.requestReloadConfigure();
 }
 
 export function getLogger(category) {
-	return loggers[category] || createLazyLogger(category);
+	return logSystem.getLogger(category);
 }
 
-export function createLogger(category, style = 'dim', options) {
-	if (loggers[category]) {
+export function createLogger(category, style, getAppender) {
+	if (!style) { style = 'dim'; }
+
+	if (logSystem.hasLogger(category)) {
 		throw new Error(
 			`Failed to create logger: "${category}" has already exists.`
 		);
 	}
 
-	const { daemon, logLevel } = config;
-
 	const getStyledCategoryStr = () => {
 		const pattern = '[%c]';
 		const validatColor = (style) => {
 			if (!isFunction(chalk[style])) {
-				throw new Error(`category with style "${style}" is NOT support.`);
+				throw new Error(`Category with style "${style}" is NOT support.`);
 			}
 		};
 
@@ -265,29 +346,36 @@ export function createLogger(category, style = 'dim', options) {
 		}
 	};
 
-	appenders[category] = options || (daemon ? {
-		...defaultFileAppender,
-	} : {
-		type: 'console',
-		layout: {
-			type: 'pattern',
-			pattern: `%[%p%] ${getStyledCategoryStr()} %m`,
+	const ref = {
+		category,
+		get daemon() {
+			return config.daemon;
 		},
-	});
+		get defaultDaemonAppender() {
+			return { ...defaultFileAppender };
+		},
+		get defaultConsoleAppender() {
+			return {
+				type: 'console',
+				layout: {
+					type: 'pattern',
+					pattern: `%[%p%] ${getStyledCategoryStr()} %m`,
+				},
+			};
+		},
+	};
 
-	if (hasRunInit) {
-		categories[category] = {
-			appenders: [category],
-			level: logLevel || defaultLogLevel,
-		};
+	logSystem.appenders[category] = () => {
+		if (isFunction(getAppender)) { return getAppender(ref); }
+		const { daemon } = config;
+		return ref[daemon ? 'defaultDaemonAppender' : 'defaultConsoleAppender'];
+	};
 
-		reloadLogSystem({ deep: true });
-		return log4js.getLogger(category);
-	}
-	else {
-		return getLogger(category);
-	}
+	logSystem.requestUpdateAppenders();
+	logSystem.requestUpdateCategories();
+
+	return logSystem.getLogger(category);
 }
 
-export const logger = defaultLogger = getLogger('out');
+export const logger = createLogger(defaultCategory, 0, () => defaultAppenders.con);
 export default logger;

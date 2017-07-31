@@ -8,7 +8,7 @@ import delay from 'delay';
 beforeAll(build);
 
 describe('logger', () => {
-	test('should `info()` works', () => {
+	test('should `info()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
 		const { logger } = requireSandbox({ console: { log } });
@@ -17,7 +17,7 @@ describe('logger', () => {
 		expect(stripAnsi(arg)).toBe(`INFO ${message}`);
 	});
 
-	test('should `warn()` works', () => {
+	test('should `warn()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
 		const { logger } = requireSandbox({ console: { log } });
@@ -26,7 +26,7 @@ describe('logger', () => {
 		expect(stripAnsi(arg)).toBe(`WARN ${message}`);
 	});
 
-	test('should `error()` works', () => {
+	test('should `error()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
 		const { logger } = requireSandbox({ console: { log } });
@@ -35,7 +35,7 @@ describe('logger', () => {
 		expect(stripAnsi(arg)).toBe(`ERROR ${message}`);
 	});
 
-	test('should `fatal()` works', () => {
+	test('should `fatal()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
 		const { logger } = requireSandbox({ console: { log } });
@@ -44,21 +44,21 @@ describe('logger', () => {
 		expect(stripAnsi(arg)).toBe(`FATAL ${message}`);
 	});
 
-	test('should `debug()` works', () => {
+	test('should `debug()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
-		const { initConfig, logger } = requireSandbox({ console: { log } });
-		initConfig({ logLevel: 'DEBUG' });
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ logLevel: 'DEBUG' });
 		logger.debug(message);
 		const arg = log.mock.calls[0][0];
 		expect(stripAnsi(arg)).toBe(`DEBUG ${message}`);
 	});
 
-	test('should `trace()` works', () => {
+	test('should `trace()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
-		const { initConfig, logger } = requireSandbox({ console: { log } });
-		initConfig({ logLevel: 'TRACE' });
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ logLevel: 'TRACE' });
 		logger.trace(message);
 		const arg = log.mock.calls[0][0];
 		expect(stripAnsi(arg)).toBe(`TRACE ${message}`);
@@ -66,7 +66,7 @@ describe('logger', () => {
 });
 
 describe('createLogger', () => {
-	test('should `createLogger()` works', () => {
+	test('should `createLogger()` work with default appender', () => {
 		const category = 'hello';
 		const message = 'world';
 		const log = jest.fn();
@@ -76,10 +76,28 @@ describe('createLogger', () => {
 		const arg = log.mock.calls[0][0];
 		expect(stripAnsi(arg)).toBe(`INFO [${category}] ${message}`);
 	});
+
+	test('should `createLogger()` work with custom appender', () => {
+		const category = 'hello';
+		const message = 'world';
+		const prefix = 'My custom logger -';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, 0, () => ({
+			type: 'console',
+			layout: {
+				type: 'pattern',
+				pattern: `${prefix} %m`,
+			},
+		}));
+		logger.info(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`${prefix} ${message}`);
+	});
 });
 
 describe('getLogger', () => {
-	test('should `getLogger()` works', () => {
+	test('should `getLogger()` work', () => {
 		const category = 'hello';
 		const message = 'world';
 		const log = jest.fn();
@@ -104,10 +122,10 @@ describe('levels', () => {
 		expect(stripAnsi(arg)).toBe('INFO info');
 	});
 
-	test('should `initConfig({ logLevel })` works', () => {
+	test('should `setConfig({ logLevel })` work', () => {
 		const log = jest.fn();
-		const { initConfig, logger } = requireSandbox({ console: { log } });
-		initConfig({ logLevel: 'TRACE' });
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ logLevel: 'TRACE' });
 		logger.trace('trace');
 		logger.debug('debug');
 		logger.info('info');
@@ -117,7 +135,17 @@ describe('levels', () => {
 		expect(stripAnsi(log.mock.calls[2][0])).toBe('INFO info');
 	});
 
-	test('should `setLevel(string)` works', () => {
+	test('should lazy run `setConfig({ logLevel })` work', () => {
+		const log = jest.fn();
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		logger.trace('a');
+		setConfig({ logLevel: 'TRACE' });
+		logger.trace('b');
+		expect(log.mock.calls.length).toBe(1);
+		expect(stripAnsi(log.mock.calls[0][0])).toBe('TRACE b');
+	});
+
+	test('should `setLevel(string)` work', () => {
 		const log = jest.fn();
 		const {
 			setLevel,
@@ -135,7 +163,7 @@ describe('levels', () => {
 		expect(stripAnsi(log.mock.calls[1][0])).toBe('TRACE [alt] b');
 	});
 
-	test('should `setLevel(object)` works', () => {
+	test('should `setLevel(object)` work', () => {
 		const log = jest.fn();
 		const {
 			setLevel,
@@ -154,7 +182,7 @@ describe('levels', () => {
 });
 
 describe('overrideConsole', () => {
-	test('should `overrideConsole()` works', () => {
+	test('should work by calling `overrideConsole()`', () => {
 		const message = 'hello';
 		const log = jest.fn();
 		const fakeConsole = { log };
@@ -165,7 +193,18 @@ describe('overrideConsole', () => {
 		expect(stripAnsi(arg)).toBe(`INFO ${message}`);
 	});
 
-	test('should `resetConsole()` works', () => {
+	test('should work by calling `setConfig()`', () => {
+		const message = 'hello';
+		const log = jest.fn();
+		const fakeConsole = { log };
+		const { setConfig } = requireSandbox({ console: fakeConsole });
+		setConfig({ overrideConsole: true });
+		fakeConsole.log(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`INFO ${message}`);
+	});
+
+	test('should `resetConsole()` work', () => {
 		const message = 'world';
 		const log = jest.fn();
 		const fakeConsole = { log };
@@ -180,7 +219,7 @@ describe('overrideConsole', () => {
 		expect(arg).toBe(message);
 	});
 
-	test('should `overrideConsoleInRuntime()` works', async () => {
+	test('should `overrideConsoleInRuntime()` work', async () => {
 		const log = jest.fn();
 		const fakeConsole = { log };
 		const {
@@ -209,8 +248,8 @@ describe('daemon', () => {
 	afterEach(removeLogsDir);
 
 	test('should create `*.log` files', async () => {
-		const { initConfig, logger } = requireSandbox();
-		initConfig({ daemon: true, logsDir, });
+		const { setConfig, logger } = requireSandbox();
+		setConfig({ daemon: true, logsDir, });
 		logger.info('hello');
 		await delay(100);
 		const out = await pathExists(join(logsDir, 'out.log'));
@@ -222,8 +261,8 @@ describe('daemon', () => {
 	});
 
 	test('should not append to `err.log` by calling `info()`', async () => {
-		const { initConfig, logger } = requireSandbox();
-		initConfig({ daemon: true, logsDir });
+		const { setConfig, logger } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
 		logger.info('hello');
 		await delay(100);
 		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
@@ -235,8 +274,8 @@ describe('daemon', () => {
 	});
 
 	test('should append to all `.log` files by calling `error()`', async () => {
-		const { initConfig, logger } = requireSandbox();
-		initConfig({ daemon: true, logsDir });
+		const { setConfig, logger } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
 		logger.error('hello');
 		await delay(100);
 		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
@@ -248,8 +287,8 @@ describe('daemon', () => {
 	});
 
 	test('should only append to `all.log` by calling `debug()`', async () => {
-		const { initConfig, logger } = requireSandbox();
-		initConfig({ daemon: true, logsDir });
+		const { setConfig, logger } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
 		logger.debug('hello');
 		await delay(100);
 		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
@@ -260,9 +299,9 @@ describe('daemon', () => {
 		expect(/\[DEBUG\] out - hello\s*$/.test(all)).toBe(true);
 	});
 
-	test('should `createLogger()` works', async () => {
-		const { initConfig, createLogger, overrideConsole } = requireSandbox();
-		initConfig({ daemon: true, logsDir });
+	test('should `createLogger()` work', async () => {
+		const { setConfig, createLogger, overrideConsole } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
 		const logger = createLogger('alt');
 		overrideConsole();
 		logger.error('hello');
@@ -275,9 +314,9 @@ describe('daemon', () => {
 		expect(/\[ERROR\] alt - hello\s*$/.test(out)).toBe(true);
 	});
 
-	test('should `setLevel()` works', async () => {
-		const { initConfig, logger, setLevel } = requireSandbox();
-		initConfig({ daemon: true, logsDir });
+	test('should `setLevel()` work', async () => {
+		const { setConfig, logger, setLevel } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
 		logger.trace('a');
 		setLevel('TRACE');
 		logger.trace('b');
@@ -286,14 +325,27 @@ describe('daemon', () => {
 		expect(/\[TRACE\] out - b\s*$/.test(out)).toBe(true);
 	});
 
-	test('should `overrideConsole()` works', async () => {
+	test('should `overrideConsole()` work', async () => {
 		const log = jest.fn();
 		const fakeConsole = { log };
-		const { initConfig } = requireSandbox({ console: fakeConsole });
-		initConfig({ daemon: true, logsDir, overrideConsole: true });
+		const { setConfig } = requireSandbox({ console: fakeConsole });
+		setConfig({ daemon: true, logsDir, overrideConsole: true });
 		fakeConsole.log('hello');
 		await delay(100);
 		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');
 		expect(/\[INFO\] out - hello\s*$/.test(out)).toBe(true);
+	});
+
+	test('should lazy set daemon work', async () => {
+		const { setConfig, logger } = requireSandbox();
+		logger.info('hello');
+		await delay(100);
+		const beforeCall = await pathExists(join(logsDir, 'out.log'));
+		expect(beforeCall).toBe(false);
+		setConfig({ daemon: true, logsDir });
+		logger.info('hello');
+		await delay(100);
+		const afterCall = await pathExists(join(logsDir, 'out.log'));
+		expect(afterCall).toBe(true);
 	});
 });

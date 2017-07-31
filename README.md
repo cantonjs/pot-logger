@@ -28,7 +28,7 @@ logger.info('虾饺');
 
 ## Daemon
 
-By default, logger messages will finaly output by calling `console.log` to terminal, but if `daemon` mod enabled, logger messages will write to `*.log` files.
+By default, logger messages will finaly output by calling `console.log` to terminal, but if `daemon` mode enabled, logger messages will write to `*.log` files.
 
 By default, there are three logs files:
 
@@ -36,7 +36,7 @@ By default, there are three logs files:
 - `err.log`: All `ERROR` or `FATAL` log level messages will write to this file.
 - `all.log`: All log level messages will write to this file.
 
-To enable `daemon` mod, run `initConfig({ daemon: true })`.
+To enable `daemon` mode, call `setConfig('daemon', true)`.
 
 
 ## Installation
@@ -101,26 +101,65 @@ Returns a `logger`.
 
 ---
 
-#### initConfig(config)
+#### setConfig(keyOrConfig[, value])
 
 Initialize configure.
 
 ###### Arguments
 
-1. `config` (Object)
+1. `keyOrConfig` (String|Object): Config key or config k/v object.
+2. `value` (Any): Only work if the first argument is a `String`.
 
-###### Avaliable config props
+##### Props
 
-- `daemon` (Boolean): If `daemon` is `true`, loggers will use `*.log` files instead of `console`. Defaults to `false`.
-- `logLevel` (String|Object): Defining custom log levels. You could set all categories by passing a level string. Or you could to set some individual categories by passing a key/value object. Defaults to "INFO". (`ALL` < `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR` < `FATAL` < `MARK` < `OFF`)
-- `logsDir` (String): Defining log files dir. By default, log files will work only when `daemon` mod enabled. Defaults to `${cwd}/.logs/`.
-- `overrideConsole` (Boolean): Override native `console` to `logger`. If `daemon` mod enabled, default value would be `true`, or it would be `false`.
+- daemon (Boolean)
+
+If `daemon` is `true`, loggers will use `*.log` files instead of `console`. Defaults to `false`.
+
+###### Example
+
+```js
+setConfig('daemon', true);
+```
+
+- logLevel (String|Object)
+
+Defining custom log levels. You could set all categories by passing a level string. Or you could to set some individual categories by passing a key/value object. Defaults to "INFO". 
+
+Valid levels: `ALL` < `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR` < `FATAL` < `MARK` < `OFF`.
+
+###### Example
+
+```js
+setConfig('logLevel', 'DEBUG');
+```
+
+- logsDir (String)
+
+Defining log files dir. By default, log files will work only when `daemon` mode enabled. Defaults to `${cwd}/.logs/`.
+
+###### Example
+
+```js
+setConfig('logsDir', '/my/logs/path/');
+```
+
+- overrideConsole (Boolean)
+
+Override native `console` to `logger`. Defaults to `false`.
+
+###### Example
+
+```js
+setConfig('overrideConsole', true);
+```
+
 
 ---
 
 #### setLevel([level])
 
-Set level. 
+Set level.
 
 ###### Arguments
 
@@ -153,7 +192,7 @@ Override native `console` in `startRun` function runtime.
 1. `startRun` (Function): Defining an async function to start to override native `console`. When this function ends, `console` will reset to the native one.
 2. `logger` (Object): Defining a logger to override `console`.
 
-###### Example
+##### Example
 
 ```js
 import { overrideConsoleInRuntime } from 'pot-logger';
