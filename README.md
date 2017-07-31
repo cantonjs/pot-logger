@@ -154,17 +154,6 @@ Override native `console` to `logger`. Defaults to `false`.
 setConfig('overrideConsole', true);
 ```
 
-
----
-
-#### setLevel([level])
-
-Set level.
-
-###### Arguments
-
-1. `level` (String|Object): Set custom log levels. You could set all categories by passing a level string. Or you could to set some individual categories by passing a key/value object. Defaults to "INFO".
-
 ---
 
 #### overrideConsole([logger])

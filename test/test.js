@@ -145,35 +145,17 @@ describe('levels', () => {
 		expect(stripAnsi(log.mock.calls[0][0])).toBe('TRACE b');
 	});
 
-	test('should `setLevel(string)` work', () => {
+	test('should work if `logLevel` is `Object`', () => {
 		const log = jest.fn();
 		const {
-			setLevel,
+			setConfig,
 			createLogger,
 			logger,
 		} = requireSandbox({ console: { log } });
 		const alt = createLogger('alt');
 		logger.trace('a');
 		alt.trace('a');
-		setLevel('TRACE');
-		logger.trace('b');
-		alt.trace('b');
-		expect(log.mock.calls.length).toBe(2);
-		expect(stripAnsi(log.mock.calls[0][0])).toBe('TRACE b');
-		expect(stripAnsi(log.mock.calls[1][0])).toBe('TRACE [alt] b');
-	});
-
-	test('should `setLevel(object)` work', () => {
-		const log = jest.fn();
-		const {
-			setLevel,
-			createLogger,
-			logger,
-		} = requireSandbox({ console: { log } });
-		const alt = createLogger('alt');
-		logger.trace('a');
-		alt.trace('a');
-		setLevel({ alt: 'TRACE' });
+		setConfig('logLevel', { alt: 'TRACE' });
 		logger.trace('b');
 		alt.trace('b');
 		expect(log.mock.calls.length).toBe(1);
@@ -314,11 +296,11 @@ describe('daemon', () => {
 		expect(/\[ERROR\] alt - hello\s*$/.test(out)).toBe(true);
 	});
 
-	test('should `setLevel()` work', async () => {
-		const { setConfig, logger, setLevel } = requireSandbox();
+	test('should set level work', async () => {
+		const { setConfig, logger } = requireSandbox();
 		setConfig({ daemon: true, logsDir });
 		logger.trace('a');
-		setLevel('TRACE');
+		setConfig('logLevel', 'TRACE');
 		logger.trace('b');
 		await delay(100);
 		const out = await readFile(join(logsDir, 'out.log'), 'utf-8');

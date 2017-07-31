@@ -239,7 +239,18 @@ export function setConfig(maybeKey, maybeVal) {
 	}
 
 	if (prev.logLevel !== config.logLevel) {
-		setLevel(config.logLevel);
+		Object
+			.keys(logSystem.appenders)
+			.forEach((key) => {
+				const $key = '$' + key;
+				const levelAppender = logSystem.appenders[$key];
+				if (levelAppender) {
+					const newLevel = getLevel(key, config.logLevel);
+					newLevel && (levelAppender.level = newLevel);
+				}
+			})
+		;
+		logSystem.requestReloadConfigure();
 	}
 
 	if (prev.logsDir !== config.logsDir) {
@@ -294,22 +305,6 @@ export function overrideConsoleInRuntime(start, logger, filter) {
 		resetConsole();
 		config.overrideConsole && overrideConsole();
 	});
-}
-
-export function setLevel(level = defaultLogLevel) {
-	config.logLevel = level;
-	Object
-		.keys(logSystem.appenders)
-		.forEach((key) => {
-			const $key = '$' + key;
-			const levelAppender = logSystem.appenders[$key];
-			if (levelAppender) {
-				const newLevel = getLevel(key, level);
-				newLevel && (levelAppender.level = newLevel);
-			}
-		})
-	;
-	logSystem.requestReloadConfigure();
 }
 
 export function getLogger(category) {
