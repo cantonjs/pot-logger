@@ -373,5 +373,6 @@ export function createLogger(category, description) {
 	return logSystem.getLogger(category);
 }
 
+export const setLogger = setConfig;
 export const logger = createLogger(defaultCategory, defaultAppenders.con);
 export default logger;
