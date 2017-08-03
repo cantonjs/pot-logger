@@ -135,7 +135,7 @@ Create a custom logger.
 2. `appenderDescription` (String|Object|Function):
     - (String): Category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Supports dot notation (i.e. `red.bold`).
     - (Object): [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender.
-    - (Function): A function that should return an [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender. The only argument of this function is a `ref` object
+    - (Function): A function that should return a [log4js appenders](https://nomiddlename.github.io/log4js-node/appenders.html). The only argument of this function is a `ref` object, which includes:
         + `category` (String)
         + `daemon` (Boolean)
         + [defaultDaemonAppender](#defaultdaemonappender) (Object)

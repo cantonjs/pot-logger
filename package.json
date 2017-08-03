@@ -1,6 +1,6 @@
 {
   "name": "pot-logger",
-  "description": "A logger system for pot-js or claypot",
+  "description": "A powerful log system for node.js, with zero configuration",
   "version": "0.0.0",
   "main": "lib/index",
   "files": [
@@ -18,14 +18,14 @@
   "author": "cap32",
   "repository": "cantonjs/pot-logger",
   "engines": {
-    "node": ">=4"
+    "node": ">=4.2"
   },
   "keywords": [
     "console",
     "logger",
     "level",
-    "pot",
-    "claypot",
+    "log",
+    "log-system",
     "daemon"
   ],
   "licenses": "MIT",
