@@ -173,7 +173,7 @@ Returns a `logger`.
 
 #### setConfig(keyOrConfig[, value])
 
-    Alias: `setLogger`
+    Alias: `setLoggers`
 
 Initialize configure.
 
