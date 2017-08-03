@@ -5,29 +5,31 @@
 A logger system for pot-js or claypot.
 
 ![screenshot](./screenshots/screenshot.png)
-<!-- MarkdownTOC -->
 
-- Getting Started
-  - logger
-  - createLogger
-- Daemon
-- Installation
-- API
-  - logger
-  - createLogger\(category\[, appenderDescription\]\)
-  - getLogger\(category\)
-  - setConfig\(keyOrConfig\[, value\]\)
-  - overrideConsole\(\[logger\]\)
-  - resetConsole\(\)
-  - overrideConsoleInRuntime\(startRun\[, logger\]\)
-- License
+
+## Table of Contents
+
+<!-- MarkdownTOC autolink="true" bracket="round" -->
+
+- [Getting Started](#getting-started)
+- [Daemon](#daemon)
+- [Installation](#installation)
+- [API](#api)
+  - [logger](#logger)
+  - [createLogger\(category\[, appenderDescription\]\)](#createloggercategory-appenderdescription)
+  - [getLogger\(category\)](#getloggercategory)
+  - [setConfig\(keyOrConfig\[, value\]\)](#setconfigkeyorconfig-value)
+  - [overrideConsole\(\[logger\]\)](#overrideconsolelogger)
+  - [resetConsole\(\)](#resetconsole)
+  - [overrideConsoleInRuntime\(startRun\[, logger\]\)](#overrideconsoleinruntimestartrun-logger)
+- [License](#license)
 
 <!-- /MarkdownTOC -->
 
 
 ## Getting Started
 
-#### logger
+**logger**
 
 ```js
 import logger from 'pot-logger';
@@ -36,7 +38,7 @@ logger.info('pot-logger');
 
 ![logger](./screenshots/logger.png)
 
-#### createLogger
+**createLogger with custom color**
 
 ```js
 import { createLogger } from 'pot-logger';
@@ -46,6 +48,10 @@ foodLogger.info('虾饺');
 
 ![createLogger with custom color](./screenshots/create-logger-1.png)
 
+All [chalk.js colors](https://github.com/chalk/chalk) are available. You can even use dot-notation to define colors. i.e. `red.bold`.
+
+**createLogger with custom appender**
+
 ```js
 import { createLogger } from 'pot-logger';
 const appender = { type: 'console', layout: { type: 'pattern', pattern: '\n 🦄 %m 🦄 \n' } };
@@ -54,6 +60,8 @@ unicornLogger.info('Agnes');
 ```
 
 ![createLogger with custom appender](./screenshots/create-logger-2.png)
+
+All [log4js appenders](https://nomiddlename.github.io/log4js-node/appenders.html) are available.
 
 
 ## Daemon
