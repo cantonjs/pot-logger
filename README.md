@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/cantonjs/pot-logger.svg?branch=master)](https://travis-ci.org/cantonjs/pot-logger) [![CircleCI](https://circleci.com/gh/cantonjs/pot-logger.svg?style=svg)](https://circleci.com/gh/cantonjs/pot-logger)
 
-A logger system for pot-js or claypot.
+A powerful log system for node.js, with zero configuration.
 
 ![screenshot](./screenshots/screenshot.png)
 
@@ -11,6 +11,7 @@ A logger system for pot-js or claypot.
 
 <!-- MarkdownTOC autolink="true" bracket="round" -->
 
+- [Features](#features)
 - [Getting Started](#getting-started)
 - [Daemon](#daemon)
 - [Installation](#installation)
@@ -22,9 +23,24 @@ A logger system for pot-js or claypot.
   - [overrideConsole\(\[logger\]\)](#overrideconsolelogger)
   - [resetConsole\(\)](#resetconsole)
   - [overrideConsoleInRuntime\(startRun\[, logger\]\)](#overrideconsoleinruntimestartrun-logger)
+- [Default Appenders](#default-appenders)
+  - [defaultDaemonAppender](#defaultdaemonappender)
+  - [defaultConsoleAppender](#defaultconsoleappender)
+- [Related Projects](#related-projects)
 - [License](#license)
 
 <!-- /MarkdownTOC -->
+
+
+## Features
+
+- Easy to getting started with zero configuration
+- Log files with configurable log rolling based on file size or date
+- Different log levels
+- Different log categories
+- Easy to create custom logger
+- All [log4js appenders](https://nomiddlename.github.io/log4js-node/appenders.html) are supported
+- Replace native console (disabled by default)
 
 
 ## Getting Started
@@ -122,8 +138,9 @@ Create a custom logger.
     - (Function): A function that should return an [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender. The only argument of this function is a `ref` object
         + `category` (String)
         + `daemon` (Boolean)
-        + `defaultDaemonAppender` (Object)
-        + `defaultConsoleAppender` (Object)
+        + [defaultDaemonAppender](#defaultdaemonappender) (Object)
+        + [defaultConsoleAppender](#defaultconsoleappender) (Object)
+
 
 ###### Returns
 
@@ -236,7 +253,7 @@ Override native `console` in `startRun` function runtime.
 1. `startRun` (Function): Defining an async function to start to override native `console`. When this function ends, `console` will reset to the native one.
 2. `logger` (Object): Defining a logger to override `console`.
 
-##### Example
+###### Example
 
 ```js
 import { overrideConsoleInRuntime } from 'pot-logger';
@@ -251,6 +268,40 @@ import { overrideConsoleInRuntime } from 'pot-logger';
   console.log('native again'); /* => native again */
 }());
 ```
+
+
+## Default Appenders
+
+#### defaultDaemonAppender
+
+```js
+{
+  type: 'file',
+  filename: defaultCategory,
+  maxLogSize: 10485760, // 10MB
+  backups: 5,
+  compress: true,
+}
+```
+
+#### defaultConsoleAppender
+
+```js
+{
+  type: 'console',
+  layout: {
+    type: 'pattern',
+    pattern: '%[%p%] %m',
+  },
+}
+```
+
+
+
+## Related Projects
+
+- [log4js-node](https://github.com/nomiddlename/log4js-node)
+- [chalk](https://github.com/chalk/chalk)
 
 
 ## License
