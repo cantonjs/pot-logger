@@ -4,7 +4,26 @@
 
 A logger system for pot-js or claypot.
 
-![screenshot](./screenshot.png)
+![screenshot](./screenshots/screenshot.png)
+<!-- MarkdownTOC -->
+
+- Getting Started
+  - logger
+  - createLogger
+- Daemon
+- Installation
+- API
+  - logger
+  - createLogger\(category\[, appenderDescription\]\)
+  - getLogger\(category\)
+  - setConfig\(keyOrConfig\[, value\]\)
+  - overrideConsole\(\[logger\]\)
+  - resetConsole\(\)
+  - overrideConsoleInRuntime\(startRun\[, logger\]\)
+- License
+
+<!-- /MarkdownTOC -->
+
 
 ## Getting Started
 
@@ -12,18 +31,29 @@ A logger system for pot-js or claypot.
 
 ```js
 import logger from 'pot-logger';
-logger.info('awesome!');
-/* => INFO awesome! */
+logger.info('pot-logger');
 ```
+
+![logger](./screenshots/logger.png)
 
 #### createLogger
 
 ```js
 import { createLogger } from 'pot-logger';
-const logger = createLogger('food');
-logger.info('虾饺');
-/* => INFO [food] 虾饺 */
+const foodLogger = createLogger('food', 'yellow');
+foodLogger.info('虾饺');
 ```
+
+![createLogger with custom color](./screenshots/create-logger-1.png)
+
+```js
+import { createLogger } from 'pot-logger';
+const appender = { type: 'console', layout: { type: 'pattern', pattern: '\n 🦄 %m 🦄 \n' } };
+const unicornLogger = createLogger('unicorn', appender);
+unicornLogger.info('Agnes');
+```
+
+![createLogger with custom appender](./screenshots/create-logger-2.png)
 
 
 ## Daemon
