@@ -34,7 +34,7 @@ A powerful log system for node.js, with zero configuration.
 
 ## Features
 
-- Easy to getting started with zero configuration
+- Easy to get started with zero configuration
 - Log files with configurable log rolling based on file size or date
 - Different log levels
 - Different log categories
