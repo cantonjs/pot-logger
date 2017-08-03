@@ -25,6 +25,7 @@ const config = {
 };
 
 const nativeConsole = {};
+const SymbolEnsureLatest = Symbol('EnsureLatest');
 
 const getLevel = (key, level, defaultLevel) =>
 	(isObject(level) ? level[key] : level) || defaultLevel
@@ -168,13 +169,11 @@ const logSystem = (function () {
 			shouldReload = true;
 		},
 		reload() {
-			if (shouldReload) {
-				performUpdateDaemon();
-				performUpdateAppenders();
-				performUpdateCategories();
-				performReloadConfigure();
-				shouldReload = false;
-			}
+			performUpdateDaemon();
+			performUpdateAppenders();
+			performUpdateCategories();
+			performReloadConfigure();
+			shouldReload = false;
 		},
 		hasLogger(category) {
 			return !!loggers[category];
@@ -182,19 +181,30 @@ const logSystem = (function () {
 		getLogger(category = defaultCategory) {
 			if (loggers[category]) { return loggers[category]; }
 
-			const init = () => {
-				this.reload();
-				return log4js.getLogger(category);
+			let origin = null;
+			let cache = {};
+
+			const ensureLatest = () => {
+				if (this.shouldReload) {
+					this.reload();
+					cache = {};
+				}
+
+				if (!origin) {
+					origin = log4js.getLogger(category);
+				}
+
+				return origin;
 			};
 
-			// TODO: should cache result
 			const reflect = (name) => {
-				const logger = init();
-				return logger[name].bind(logger);
+				ensureLatest();
+				if (cache[name]) { return cache[name]; }
+				return (cache[name] = origin[name].bind(origin));
 			};
 
 			return (loggers[category] = {
-				init,
+				[SymbolEnsureLatest]: ensureLatest,
 				get trace() { return reflect('trace'); },
 				get debug() { return reflect('debug'); },
 				get info() { return reflect('info'); },
@@ -267,7 +277,7 @@ export function setConfig(maybeKey, maybeVal) {
 }
 
 export function overrideConsole(logger = logSystem.getLogger(), filter) {
-	logger = logger.init ? logger.init() : logger;
+	logger = logger[SymbolEnsureLatest] ? logger[SymbolEnsureLatest]() : logger;
 
 	const createReflection = (method) => {
 		return (...args) => {
