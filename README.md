@@ -190,17 +190,17 @@ Initialize configure.
 - logsDir (String)
 - overrideConsole (Boolean)
 
-##### enable
+##### Props.enable
 
 If `enable` is `false`, no log messages would show, and nothing would write to log files. Defaults to `true`.
 
 ###### Example
 
 ```js
-setConfig('daemon', true);
+setConfig('enable', false);
 ```
 
-##### daemon
+##### Props.daemon
 
 If `daemon` is `true`, loggers will use `*.log` files instead of `console`. Defaults to `false`.
 
@@ -210,7 +210,7 @@ If `daemon` is `true`, loggers will use `*.log` files instead of `console`. Defa
 setConfig('daemon', true);
 ```
 
-##### logLevel
+##### Props.logLevel
 
 Defining custom log levels. You could set all categories by passing a level string. Or you could to set some individual categories by passing a key/value object. Defaults to "INFO". 
 
@@ -222,7 +222,7 @@ Valid levels: `ALL` < `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR` < `FATAL` < 
 setConfig('logLevel', 'DEBUG');
 ```
 
-##### logDir
+##### Props.logDir
 
 Defining log files dir. By default, log files will work only when `daemon` mode enabled. Defaults to `${cwd}/.logs/`.
 
@@ -232,7 +232,7 @@ Defining log files dir. By default, log files will work only when `daemon` mode 
 setConfig('logsDir', '/my/logs/path/');
 ```
 
-##### overrideConsole
+##### Props.overrideConsole
 
 Override native `console` to `logger`. Defaults to `false`.
 
