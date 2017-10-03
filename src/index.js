@@ -120,20 +120,21 @@ const logSystem = (function () {
 
 	const performUpdateDaemon = () => {
 		if (!shouldUpdateDaemon) { return; }
-
-		if (config.daemon) {
-			Object.assign(appenders, {
-				_all: defaultAppenders.all,
-				_err: defaultAppenders.err,
-				[defaultCategory]: defaultAppenders.out,
-			});
-		}
-		else {
-			Reflect.deleteProperty(appenders, '_all');
-			Reflect.deleteProperty(appenders, '_err');
-			Reflect.deleteProperty(appenders, '$_all');
-			Reflect.deleteProperty(appenders, '$_err');
-			appenders[defaultCategory] = defaultAppenders.con;
+		if (enable) {
+			if (config.daemon) {
+				Object.assign(appenders, {
+					_all: defaultAppenders.all,
+					_err: defaultAppenders.err,
+					[defaultCategory]: defaultAppenders.out,
+				});
+			}
+			else {
+				Reflect.deleteProperty(appenders, '_all');
+				Reflect.deleteProperty(appenders, '_err');
+				Reflect.deleteProperty(appenders, '$_all');
+				Reflect.deleteProperty(appenders, '$_err');
+				appenders[defaultCategory] = defaultAppenders.con;
+			}
 		}
 		shouldUpdateDaemon = false;
 	};
@@ -179,6 +180,10 @@ const logSystem = (function () {
 			shouldReload = true;
 		},
 		requestReloadEnableStatus() {
+			shouldUpdateDaemon = true;
+			shouldUpdateAppenders = true;
+			shouldUpdateCategories = true;
+			shouldReloadConfigure = true;
 			shouldReloadEnableStatus = true;
 			shouldReload = true;
 		},

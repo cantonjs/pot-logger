@@ -401,12 +401,12 @@ describe('daemon', () => {
 		setConfig({ daemon: true, logsDir, enable: false });
 		logger.error('hello');
 		await delay(100);
-		let all = await readFile(join(logsDir, 'all.log'), 'utf-8');
-		expect(all).toBe('');
+		const logsDirExists = await pathExists(logsDir);
+		expect(logsDirExists).toBe(false);
 		setConfig({ enable: true });
 		logger.error('hello');
 		await delay(100);
-		all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
 		expect(/\[ERROR\] out - hello\s*$/.test(all)).toBe(true);
 	});
 });
