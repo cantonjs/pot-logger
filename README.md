@@ -1,6 +1,6 @@
 # pot-logger
 
-[![Build Status](https://travis-ci.org/cantonjs/pot-logger.svg?branch=master)](https://travis-ci.org/cantonjs/pot-logger) [![CircleCI](https://circleci.com/gh/cantonjs/pot-logger.svg?style=svg)](https://circleci.com/gh/cantonjs/pot-logger) [![Dependencies](https://david-dm.org/cantonjs/pot-logger)](https://david-dm.org/cantonjs/pot-logger.svg) [![License](https://img.shields.io/badge/license-MIT_License-blue.svg?style=flat)](https://github.com/cantonjs/pot-logger/blob/master/LICENSE.md)
+[![Build Status](https://travis-ci.org/cantonjs/pot-logger.svg?branch=master)](https://travis-ci.org/cantonjs/pot-logger) [![CircleCI](https://circleci.com/gh/cantonjs/pot-logger.svg?style=svg)](https://circleci.com/gh/cantonjs/pot-logger) [![Dependencies](https://david-dm.org/cantonjs/pot-logger.svg)](https://david-dm.org/cantonjs/pot-logger) [![License](https://img.shields.io/badge/license-MIT_License-blue.svg?style=flat)](https://github.com/cantonjs/pot-logger/blob/master/LICENSE.md)
 
 A powerful log system for node.js, with zero configuration.
 
