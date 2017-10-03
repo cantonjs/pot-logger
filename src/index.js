@@ -6,6 +6,7 @@ import chalk from 'chalk';
 const isFunction = (src) => typeof src === 'function';
 const isObject = (src) => typeof src === 'object';
 const isString = (src) => typeof src === 'string';
+const noop = () => {};
 
 const defaultCategory = 'out';
 const defaultLogLevel = 'INFO';
@@ -18,6 +19,7 @@ const defaultFileAppender = {
 };
 
 const config = {
+	enable: true,
 	logLevel: defaultLogLevel,
 	logsDir: resolve('.logs'),
 	daemon: false,
@@ -37,6 +39,8 @@ const logSystem = (function () {
 	let shouldUpdateAppenders = false;
 	let shouldUpdateCategories = false;
 	let shouldReloadConfigure = false;
+	let shouldReloadEnableStatus = false;
+	let enable = config.enable;
 	let appenders = {};
 	let categories = {};
 	const loggers = {};
@@ -140,6 +144,12 @@ const logSystem = (function () {
 		shouldReloadConfigure = false;
 	};
 
+	const performReloadEnableStatus = () => {
+		if (!shouldReloadEnableStatus) { return; }
+		enable = config.enable;
+		shouldReloadEnableStatus = false;
+	};
+
 	return {
 		get shouldReload() {
 			return shouldReload;
@@ -168,7 +178,12 @@ const logSystem = (function () {
 			shouldReloadConfigure = true;
 			shouldReload = true;
 		},
+		requestReloadEnableStatus() {
+			shouldReloadEnableStatus = true;
+			shouldReload = true;
+		},
 		reload() {
+			performReloadEnableStatus();
 			performUpdateDaemon();
 			performUpdateAppenders();
 			performUpdateCategories();
@@ -200,7 +215,7 @@ const logSystem = (function () {
 			const reflect = (name) => {
 				ensureLatest();
 				if (cache[name]) { return cache[name]; }
-				return (cache[name] = origin[name].bind(origin));
+				return (cache[name] = enable ? origin[name].bind(origin) : noop);
 			};
 
 			return (loggers[category] = {
@@ -244,6 +259,10 @@ export function setConfig(maybeKey, maybeVal) {
 		config,
 		isObject(maybeKey) ? maybeKey : ({ [maybeKey]: maybeVal }),
 	);
+
+	if (prev.enable !== config.enable) {
+		logSystem.requestReloadEnableStatus();
+	}
 
 	if (prev.daemon !== config.daemon) {
 		logSystem.requestUpdateDaemon();

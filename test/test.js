@@ -196,6 +196,19 @@ describe('levels', () => {
 		expect(stripAnsi(log.mock.calls[0][0])).toBe('TRACE b');
 	});
 
+	test('should `setConfig({ enable: false })` work', async () => {
+		const log = jest.fn();
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ enable: false });
+		logger.info('hello');
+		expect(log.mock.calls.length).toBe(0);
+		setConfig({ enable: true });
+		logger.info('hello');
+		expect(log.mock.calls.length).toBe(1);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe('INFO hello');
+	});
+
 	test('should work if `logLevel` is `Object`', () => {
 		const log = jest.fn();
 		const {
@@ -282,7 +295,7 @@ describe('daemon', () => {
 
 	test('should create `*.log` files', async () => {
 		const { setConfig, logger } = requireSandbox();
-		setConfig({ daemon: true, logsDir, });
+		setConfig({ daemon: true, logsDir });
 		logger.info('hello');
 		await delay(100);
 		const out = await pathExists(join(logsDir, 'out.log'));
@@ -380,5 +393,20 @@ describe('daemon', () => {
 		await delay(100);
 		const afterCall = await pathExists(join(logsDir, 'out.log'));
 		expect(afterCall).toBe(true);
+	});
+
+	test('should `setConfig({ enable: false })` work', async () => {
+		const log = jest.fn();
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ daemon: true, logsDir, enable: false });
+		logger.error('hello');
+		await delay(100);
+		let all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(all).toBe('');
+		setConfig({ enable: true });
+		logger.error('hello');
+		await delay(100);
+		all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(/\[ERROR\] out - hello\s*$/.test(all)).toBe(true);
 	});
 });
