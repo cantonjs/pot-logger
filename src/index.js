@@ -346,6 +346,10 @@ export function getLogger(category) {
 	return logSystem.getLogger(category);
 }
 
+export function hasLogger(category) {
+	return logSystem.hasLogger(category);
+}
+
 export function createLogger(category, description) {
 	if (logSystem.hasLogger(category)) {
 		throw new Error(
