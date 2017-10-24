@@ -18,6 +18,7 @@ A powerful log system for node.js, with zero configuration.
 - [API](#api)
   - [logger](#logger)
   - [createLogger\(category\[, appenderDescription\]\)](#createloggercategory-appenderdescription)
+  - [hasLogger\(category\)](#hasloggercategory)
   - [getLogger\(category\)](#getloggercategory)
   - [setConfig\(keyOrConfig\[, value\]\)](#setconfigkeyorconfig-value)
   - [overrideConsole\(\[logger\]\)](#overrideconsolelogger)
@@ -32,6 +33,7 @@ A powerful log system for node.js, with zero configuration.
 <!-- /MarkdownTOC -->
 
 
+<a name="features"></a>
 ## Features
 
 - Easy to get started with zero configuration
@@ -43,6 +45,7 @@ A powerful log system for node.js, with zero configuration.
 - Replace native console (disabled by default)
 
 
+<a name="getting-started"></a>
 ## Getting Started
 
 **logger**
@@ -80,6 +83,7 @@ unicornLogger.info('Agnes');
 All [log4js appenders](https://nomiddlename.github.io/log4js-node/appenders.html) are available.
 
 
+<a name="daemon"></a>
 ## Daemon
 
 By default, logger messages will finaly output by calling `console.log` to terminal, but if `daemon` mode enabled, logger messages will write to `*.log` files.
@@ -93,6 +97,7 @@ By default, there are three logs files:
 To enable `daemon` mode, call `setConfig('daemon', true)`.
 
 
+<a name="installation"></a>
 ## Installation
 
 ```bash
@@ -100,8 +105,10 @@ npm i pot-logger
 ```
 
 
+<a name="api"></a>
 ## API
 
+<a name="logger"></a>
 #### logger
 
 Default logger. A logger is a little bit like `console`, it has these methods:
@@ -125,6 +132,7 @@ var logger = require('pot-logger').default; /* or */
 
 ---
 
+<a name="createloggercategory-appenderdescription"></a>
 #### createLogger(category[, appenderDescription])
 
 Create a custom logger.
@@ -157,6 +165,22 @@ const logger = createLogger('test', (ref) => {
 
 ---
 
+<a name="hasloggercategory"></a>
+#### hasLogger(category)
+
+Returns a boolean indicating whether a logger with the specified category exists or not.
+
+###### Arguments
+
+1. `category` (String): Logger category.
+
+###### Returns
+
+Returns `true` or `false`.
+
+---
+
+<a name="getloggercategory"></a>
 #### getLogger(category)
 
 Get logger by category. If not found, it would return the default logger.
@@ -171,6 +195,7 @@ Returns a `logger`.
 
 ---
 
+<a name="setconfigkeyorconfig-value"></a>
 #### setConfig(keyOrConfig[, value])
 
     Alias: `setLoggers`
@@ -244,6 +269,7 @@ setConfig('overrideConsole', true);
 
 ---
 
+<a name="overrideconsolelogger"></a>
 #### overrideConsole([logger])
 
 Override native `console`. Notice that `console.log()` will be equal with `logger.info()`.
@@ -254,12 +280,14 @@ Override native `console`. Notice that `console.log()` will be equal with `logge
 
 ---
 
+<a name="resetconsole"></a>
 #### resetConsole()
 
 Reset `console` to the native one. Only work after `overrideConsole()` run.
 
 ---
 
+<a name="overrideconsoleinruntimestartrun-logger"></a>
 #### overrideConsoleInRuntime(startRun[, logger])
 
 Override native `console` in `startRun` function runtime.
@@ -286,8 +314,10 @@ import { overrideConsoleInRuntime } from 'pot-logger';
 ```
 
 
+<a name="default-appenders"></a>
 ## Default Appenders
 
+<a name="defaultdaemonappender"></a>
 #### defaultDaemonAppender
 
 ```js
@@ -300,6 +330,7 @@ import { overrideConsoleInRuntime } from 'pot-logger';
 }
 ```
 
+<a name="defaultconsoleappender"></a>
 #### defaultConsoleAppender
 
 ```js
@@ -314,12 +345,14 @@ import { overrideConsoleInRuntime } from 'pot-logger';
 
 
 
+<a name="related-projects"></a>
 ## Related Projects
 
 - [log4js-node](https://github.com/nomiddlename/log4js-node)
 - [chalk](https://github.com/chalk/chalk)
 
 
+<a name="license"></a>
 ## License
 
 MIT
