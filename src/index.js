@@ -43,7 +43,7 @@ const logSystem = (function () {
 	let enable = config.enable;
 	let appenders = {};
 	let categories = {};
-	const loggers = {};
+	const loggers = new Map();
 
 	const getCategories = () => {
 		const appenderKeys = Object.keys(appenders);
@@ -196,10 +196,10 @@ const logSystem = (function () {
 			shouldReload = false;
 		},
 		hasLogger(category) {
-			return !!loggers[category];
+			return loggers.has(category);
 		},
 		getLogger(category = defaultCategory) {
-			if (loggers[category]) { return loggers[category]; }
+			if (loggers.has(category)) { return loggers.get(category); }
 
 			let origin = null;
 			let cache = {};
@@ -223,7 +223,7 @@ const logSystem = (function () {
 				return (cache[name] = enable ? origin[name].bind(origin) : noop);
 			};
 
-			return (loggers[category] = {
+			const logger = {
 				[SymbolEnsureLatest]: ensureLatest,
 				get trace() { return reflect('trace'); },
 				get debug() { return reflect('debug'); },
@@ -231,7 +231,9 @@ const logSystem = (function () {
 				get warn() { return reflect('warn'); },
 				get error() { return reflect('error'); },
 				get fatal() { return reflect('fatal'); },
-			});
+			};
+			loggers.set(category, logger);
+			return logger;
 		},
 	};
 }());
