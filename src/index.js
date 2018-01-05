@@ -413,6 +413,11 @@ export function createLogger(category, description) {
 	return logSystem.getLogger(category);
 }
 
+export const ensureLogger = function ensureLogger(category, description) {
+	return hasLogger(category) ?
+		getLogger(category) : createLogger(category, description);
+};
+
 export const setLoggers = setConfig;
 export const logger = createLogger(defaultCategory, defaultAppenders.con);
 export default logger;

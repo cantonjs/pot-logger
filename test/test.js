@@ -164,6 +164,20 @@ describe('getLogger', () => {
 	});
 });
 
+describe('hasLogger', () => {
+	test('should `hasLogger()` returns `false` if logger does\'t exist', () => {
+		const { hasLogger } = requireSandbox({ console: {} });
+		expect(hasLogger('hello')).toBe(false);
+	});
+
+	test('should `hasLogger()` returns `true` if logger exists', () => {
+		const category = 'hello';
+		const { createLogger, hasLogger } = requireSandbox({ console: {} });
+		createLogger(category, 'red');
+		expect(hasLogger(category)).toBe(true);
+	});
+});
+
 describe('levels', () => {
 	test('default level should be "INFO"', () => {
 		const log = jest.fn();
