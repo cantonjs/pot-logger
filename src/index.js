@@ -26,6 +26,49 @@ const config = {
 	overrideConsole: false,
 };
 
+const colored = (color = 'dim') => {
+	const pattern = '[%c]';
+	const validatColor = (color) => {
+		if (!isFunction(chalk[color])) {
+			throw new Error(`Category with style "${color}" is NOT support.`);
+		}
+	};
+
+	const getColor = color.split('.').reduce((chalkChaining, color) => {
+		validatColor(color);
+		return chalkChaining[color];
+	}, chalk);
+	return getColor(pattern);
+};
+
+const createAppender = function createAppender(category, description, daemon) {
+	const { type, color, file, ...other } = description;
+
+	if (type) { return description; }
+
+	if (daemon) {
+		const categoryPattern = file ? ' ' : ' %c - ';
+		return {
+			...defaultFileAppender,
+			layout: {
+				type: 'pattern',
+				pattern: `[%d] [%p]${categoryPattern}%m`,
+			},
+			...other,
+			filename: file ? category : defaultCategory,
+		};
+	}
+	else {
+		return {
+			type: 'console',
+			layout: {
+				type: 'pattern',
+				pattern: `%[%p%] ${colored(color)} %m`,
+			},
+		};
+	}
+};
+
 const nativeConsole = {};
 const SymbolEnsureLatest = Symbol('EnsureLatest');
 
@@ -359,28 +402,15 @@ export function createLogger(category, description) {
 		);
 	}
 
+	let appender;
+
 	if (isObject(description)) {
-		logSystem.appenders[category] = description;
+		appender = createAppender(category, description, config.daemon);
 	}
 	else {
-		let style = 'dim';
+		let color;
 
-		if (isString(description)) { style = description; }
-
-		const getStyledCategoryStr = () => {
-			const pattern = '[%c]';
-			const validatColor = (style) => {
-				if (!isFunction(chalk[style])) {
-					throw new Error(`Category with style "${style}" is NOT support.`);
-				}
-			};
-
-			const getStyle = style.split('.').reduce((chalkChaining, color) => {
-				validatColor(color);
-				return chalkChaining[color];
-			}, chalk);
-			return getStyle(pattern);
-		};
+		if (isString(description)) { color = description; }
 
 		const ref = {
 			category,
@@ -388,25 +418,33 @@ export function createLogger(category, description) {
 				return config.daemon;
 			},
 			get defaultDaemonAppender() {
-				return { ...defaultFileAppender };
+				return {
+					...defaultFileAppender,
+				};
 			},
 			get defaultConsoleAppender() {
 				return {
 					type: 'console',
 					layout: {
 						type: 'pattern',
-						pattern: `%[%p%] ${getStyledCategoryStr()} %m`,
+						pattern: `%[%p%] ${colored(color)} %m`,
 					},
 				};
 			},
 		};
 
-		logSystem.appenders[category] = () => {
-			if (isFunction(description)) { return description(ref); }
-			const { daemon } = config;
-			return ref[daemon ? 'defaultDaemonAppender' : 'defaultConsoleAppender'];
+		appender = () => {
+			if (isFunction(description)) {
+				return createAppender(category, description(ref), config.daemon);
+			}
+			else {
+				const finalDescription = { color: description };
+				return createAppender(category, finalDescription, config.daemon);
+			}
 		};
 	}
+
+	logSystem.appenders[category] = appender;
 
 	logSystem.requestUpdateAppenders();
 	logSystem.requestUpdateCategories();

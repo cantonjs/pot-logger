@@ -84,6 +84,17 @@ describe('createLogger', () => {
 	test('custom appender object', () => {
 		const category = 'hello';
 		const message = 'world';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, { color: 'red' });
+		logger.info(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`INFO [${category}] ${message}`);
+	});
+
+	test('log4js appender', () => {
+		const category = 'hello';
+		const message = 'world';
 		const prefix = 'My custom logger -';
 		const log = jest.fn();
 		const { createLogger } = requireSandbox({ console: { log } });
@@ -383,10 +394,9 @@ describe('daemon', () => {
 	});
 
 	test('should `createLogger()` work', async () => {
-		const { setConfig, createLogger, overrideConsole } = requireSandbox();
+		const { setConfig, createLogger } = requireSandbox();
 		setConfig({ daemon: true, logsDir });
 		const logger = createLogger('alt');
-		overrideConsole();
 		logger.error('hello');
 		await delay(100);
 		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
@@ -395,6 +405,20 @@ describe('daemon', () => {
 		expect(/\[ERROR\] alt - hello\s*$/.test(all)).toBe(true);
 		expect(/\[ERROR\] alt - hello\s*$/.test(err)).toBe(true);
 		expect(/\[ERROR\] alt - hello\s*$/.test(out)).toBe(true);
+	});
+
+	test('should `createLogger()` work when `file: true`', async () => {
+		const { setConfig, createLogger } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
+		const logger = createLogger('alt', { file: true });
+		logger.error('hello');
+		await delay(100);
+		const err = await readFile(join(logsDir, 'err.log'), 'utf-8');
+		const alt = await readFile(join(logsDir, 'alt.log'), 'utf-8');
+		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
+		expect(/\[ERROR\] alt - hello\s*$/.test(all)).toBe(true);
+		expect(/\[ERROR\] alt - hello\s*$/.test(err)).toBe(true);
+		expect(/\[ERROR\] hello\s*$/.test(alt)).toBe(true);
 	});
 
 	test('should set level work', async () => {
