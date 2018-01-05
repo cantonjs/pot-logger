@@ -198,7 +198,7 @@ Get logger by category. If not found, create one.
 ###### Arguments
 
 1. `category` (String): Logger category.
-2. `appenderDescription` (String|Object|Function):  Please see [creating-custom-logger](#creating-custom-logger) for detail.
+2. `appenderDescription` (String|Object|Function): Please see [creating-custom-logger](#creating-custom-logger) for detail.
 
 ###### Returns
 
