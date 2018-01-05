@@ -20,10 +20,12 @@ A powerful log system for node.js, with zero configuration.
   - [createLogger\(category\[, appenderDescription\]\)](#createloggercategory-appenderdescription)
   - [hasLogger\(category\)](#hasloggercategory)
   - [getLogger\(category\)](#getloggercategory)
+  - [ensureLogger\(category\[, appenderDescription\]\)](#ensureloggercategory-appenderdescription)
   - [setConfig\(keyOrConfig\[, value\]\)](#setconfigkeyorconfig-value)
   - [overrideConsole\(\[logger\]\)](#overrideconsolelogger)
   - [resetConsole\(\)](#resetconsole)
   - [overrideConsoleInRuntime\(startRun\[, logger\]\)](#overrideconsoleinruntimestartrun-logger)
+- [Creating Custom Logger](#creating-custom-logger)
 - [Default Appenders](#default-appenders)
   - [defaultDaemonAppender](#defaultdaemonappender)
   - [defaultConsoleAppender](#defaultconsoleappender)
@@ -140,14 +142,7 @@ Create a custom logger.
 ###### Arguments
 
 1. `category` (String): Logger category.
-2. `appenderDescription` (String|Object|Function):
-    - (String): Category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Supports dot notation (i.e. `red.bold`).
-    - (Object): [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender.
-    - (Function): A function that should return a [log4js appenders](https://nomiddlename.github.io/log4js-node/appenders.html). The only argument of this function is a `ref` object, which includes:
-        + `category` (String)
-        + `daemon` (Boolean)
-        + [defaultDaemonAppender](#defaultdaemonappender) (Object)
-        + [defaultConsoleAppender](#defaultconsoleappender) (Object)
+2. `appenderDescription` (String|Object|Function): Please see [creating-custom-logger](#creating-custom-logger) for detail.
 
 
 ###### Returns
@@ -188,6 +183,22 @@ Get logger by category. If not found, it would return the default logger.
 ###### Arguments
 
 1. `category` (String): Logger category.
+
+###### Returns
+
+Returns a `logger`.
+
+---
+
+<a name="ensureloggercategory-appenderdescription"></a>
+#### ensureLogger(category[, appenderDescription])
+
+Get logger by category. If not found, create one.
+
+###### Arguments
+
+1. `category` (String): Logger category.
+2. `appenderDescription` (String|Object|Function):  Please see [creating-custom-logger](#creating-custom-logger) for detail.
 
 ###### Returns
 
@@ -312,6 +323,53 @@ import { overrideConsoleInRuntime } from 'pot-logger';
   console.log('native again'); /* => native again */
 }());
 ```
+
+---
+
+
+<a name="creating-custom-logger"></a>
+## Creating Custom Logger
+
+You could create a custom logger by calling `createLogger(category, appenderDescription)` or `ensureLogger(category, appenderDescription)`. The `appenderDescription` argument is the description of appender.
+
+##### If `appenderDescription` is an \<Object\>, these options are available:
+
+- `color` (String): The category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Supports dot notation (i.e. `red.bold`). Only work for non-daemon (terminal) mode.
+- `file` (Boolean) [optional]: Use new log file or not. If `true`, the log file name will be the category name. Defaults to `false`. Only work for daemon mode.
+- `maxLogSize` (Integer) [optional]: The maximum size (in bytes) for the log file. If not specified, then no log rolling will happen. Only work for daemon mode.
+- `backups` (Integer) [optional]: The number of old log files to keep during log rolling. Defaults to 5. Only work for daemon mode.
+- `compress` (Boolean) [optional] - Compress the backup files during rolling (backup files will have .gz extension). Defaults to `true`. Only work for daemon mode.
+
+###### Example
+
+```js
+import { createLogger } from 'pot-logger';
+const logger = createLogger('test', {
+  color: 'yellow',
+  file: true,
+});
+```
+
+##### If `appenderDescription` is an \<String\>, it's short for `{ color: string }`.
+
+##### If `appenderDescription` is an \<Function\>, there's an argument object which includes:
+
+- `category` (String)
+- `daemon` (Boolean)
+- [defaultDaemonAppender](#defaultdaemonappender) (Object)
+- [defaultConsoleAppender](#defaultconsoleappender) (Object)
+
+###### Example
+
+```js
+import { createLogger } from 'pot-logger';
+const logger = createLogger('test', (ref) => {
+    return ref.daemon ? ref.defaultDaemonAppender : ref.defaultConsoleAppender;
+});
+```
+
+
+##### What't more, you could also pass [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender configure to `appenderDescription`.
 
 
 <a name="default-appenders"></a>
