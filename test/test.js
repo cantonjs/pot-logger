@@ -6,6 +6,9 @@ import stripAnsi from 'strip-ansi';
 import chalk from 'chalk';
 import delay from 'delay';
 
+// import maxListenersExceededWarning from 'max-listeners-exceeded-warning';
+// maxListenersExceededWarning();
+
 beforeAll(build);
 
 describe('logger', () => {
