@@ -1,8 +1,11 @@
 # pot-logger
 
-[![Build Status](https://travis-ci.org/cantonjs/pot-logger.svg?branch=master)](https://travis-ci.org/cantonjs/pot-logger) [![CircleCI](https://circleci.com/gh/cantonjs/pot-logger.svg?style=svg)](https://circleci.com/gh/cantonjs/pot-logger) [![Dependencies](https://david-dm.org/cantonjs/pot-logger.svg)](https://david-dm.org/cantonjs/pot-logger) [![License](https://img.shields.io/badge/license-MIT_License-blue.svg?style=flat)](https://github.com/cantonjs/pot-logger/blob/master/LICENSE.md)
+[![Build Status](https://travis-ci.org/cantonjs/pot-logger.svg?branch=master)](https://travis-ci.org/cantonjs/pot-logger)
+[![CircleCI](https://circleci.com/gh/cantonjs/pot-logger.svg?style=svg)](https://circleci.com/gh/cantonjs/pot-logger)
+[![Dependencies](https://david-dm.org/cantonjs/pot-logger.svg)](https://david-dm.org/cantonjs/pot-logger)
+[![License](https://img.shields.io/badge/license-MIT_License-blue.svg?style=flat)](https://github.com/cantonjs/pot-logger/blob/master/LICENSE.md)
 
-A powerful log system for node.js, with zero configuration.
+A powerful log system for node.js, with zero configuration. Built on top of [log4js](https://github.com/log4js-node/log4js-node)
 
 ![screenshot](./screenshots/screenshot.png)
 
@@ -254,8 +257,16 @@ Valid levels: `ALL` < `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR` < `FATAL` < 
 
 ###### Example
 
+**Apply to all categories:**
+
 ```js
 setConfig('logLevel', 'DEBUG');
+```
+
+**Apply to individual category:**
+
+```js
+setConfig('logLevel', { myLogger: 'DEBUG' });
 ```
 
 ##### Props.logDir
@@ -332,9 +343,9 @@ import { overrideConsoleInRuntime } from 'pot-logger';
 
 You could create a custom logger by calling `createLogger(category, appenderDescription)` or `ensureLogger(category, appenderDescription)`. The `appenderDescription` argument is the description of appender.
 
-##### If `appenderDescription` is an \<Object\>, these options are available:
+**If `appenderDescription` is an \<Object\>, these options are available:**
 
-- `color` (String): The category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Supports dot notation (i.e. `red.bold`). Only work for non-daemon (terminal) mode.
+- `color` (String): The category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Support dot notation (i.e. `red.bold`). Only work for non-daemon (terminal) mode.
 - `file` (Boolean) [optional]: Use new log file or not. If `true`, the log file name will be the category name. Defaults to `false`. Only work for daemon mode.
 - `maxLogSize` (Integer) [optional]: The maximum size (in bytes) for the log file. If not specified, then no log rolling will happen. Only work for daemon mode.
 - `backups` (Integer) [optional]: The number of old log files to keep during log rolling. Defaults to 5. Only work for daemon mode.
@@ -350,9 +361,9 @@ const logger = createLogger('test', {
 });
 ```
 
-##### If `appenderDescription` is an \<String\>, it's short for `{ color: string }`.
+**If `appenderDescription` is a \<String\>, it's short for `{ color: <string\> }`.**
 
-##### If `appenderDescription` is an \<Function\>, there's an argument object which includes:
+**If `appenderDescription` is a \<Function\>, there's an argument object which includes:**
 
 - `category` (String)
 - `daemon` (Boolean)
@@ -369,7 +380,7 @@ const logger = createLogger('test', (ref) => {
 ```
 
 
-##### What't more, you could also pass [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender configure to `appenderDescription`.
+**What't more, you could also pass [log4js](https://nomiddlename.github.io/log4js-node/appenders.html) appender configure to `appenderDescription`.**
 
 
 <a name="default-appenders"></a>
