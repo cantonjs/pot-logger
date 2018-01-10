@@ -351,7 +351,7 @@ export function overrideConsole(logger = logSystem.getLogger(), filter) {
 	const createReflection = (method) => {
 		return (...args) => {
 			if (isFunction(filter)) { args = filter(args, method, logger); }
-			args.length && Reflect.apply(logger[method], logger, args);
+			if (args.length) { logger[method].apply(logger, args); }
 		};
 	};
 
