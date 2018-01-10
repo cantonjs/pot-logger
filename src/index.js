@@ -172,10 +172,10 @@ const logSystem = (function () {
 				});
 			}
 			else {
-				Reflect.deleteProperty(appenders, '_all');
-				Reflect.deleteProperty(appenders, '_err');
-				Reflect.deleteProperty(appenders, '$_all');
-				Reflect.deleteProperty(appenders, '$_err');
+				delete appenders._all;
+				delete appenders._err;
+				delete appenders.$_all;
+				delete appenders.$_err;
 				appenders[defaultCategory] = defaultAppenders.con;
 			}
 		}
