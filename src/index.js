@@ -1,4 +1,3 @@
-
 import log4js from 'log4js';
 import { join, resolve, isAbsolute, extname } from 'path';
 import chalk from 'chalk';
@@ -44,7 +43,9 @@ const colored = (color = 'dim') => {
 const createAppender = function createAppender(category, description, daemon) {
 	const { type, color, file, ...other } = description;
 
-	if (type) { return description; }
+	if (type) {
+		return description;
+	}
 
 	if (daemon) {
 		const categoryPattern = file ? ' ' : ' %c - ';
@@ -73,8 +74,7 @@ const nativeConsole = {};
 const SymbolEnsureLatest = Symbol('EnsureLatest');
 
 const getLevel = (key, level, defaultLevel) =>
-	(isObject(level) ? level[key] : level) || defaultLevel
-;
+	(isObject(level) ? level[key] : level) || defaultLevel;
 
 const logSystem = (function () {
 	let shouldReload = false;
@@ -92,53 +92,74 @@ const logSystem = (function () {
 		const appenderKeys = Object.keys(appenders);
 
 		const builtInLevelAppenders = [];
-		if (appenders['$_all']) { builtInLevelAppenders.push('$_all'); }
-		if (appenders['$_err']) { builtInLevelAppenders.push('$_err'); }
+		if (appenders['$_all']) {
+			builtInLevelAppenders.push('$_all');
+		}
+		if (appenders['$_err']) {
+			builtInLevelAppenders.push('$_err');
+		}
 
-		return appenderKeys.reduce((categories, key) => {
-			const isCustomKey = !/^[$_]/.test(key);
-			const $key = '$' + key;
-			if (isCustomKey && appenders[$key]) {
-				categories[key] = {
-					appenders: [$key, ...builtInLevelAppenders],
-					level: 'ALL',
-				};
-			}
-			return categories;
-		}, {
-			default: {
-				appenders: [`$${defaultCategory}`, ...builtInLevelAppenders],
-				level: 'ALL',
+		return appenderKeys.reduce(
+			(categories, key) => {
+				const isCustomKey = !/^[$_]/.test(key);
+				const $key = '$' + key;
+				if (isCustomKey && appenders[$key]) {
+					categories[key] = {
+						appenders: [$key, ...builtInLevelAppenders],
+						level: 'ALL',
+					};
+				}
+				return categories;
 			},
-		});
+			{
+				default: {
+					appenders: [`$${defaultCategory}`, ...builtInLevelAppenders],
+					level: 'ALL',
+				},
+			},
+		);
 	};
 
 	const performUpdateAppenders = () => {
-		if (!shouldUpdateAppenders) { return; }
+		if (!shouldUpdateAppenders) {
+			return;
+		}
 
 		const { logsDir, logLevel } = config;
 		const appenderKeys = Object.keys(appenders);
 
 		const ensureFilename = (appender) => {
 			let name = appender.filename;
-			if (!name) { return appender; }
-			if (extname(name) !== '.log') { name += '.log'; }
+			if (!name) {
+				return appender;
+			}
+			if (extname(name) !== '.log') {
+				name += '.log';
+			}
 			appender.filename = isAbsolute(name) ? name : join(logsDir, name);
 		};
 
 		const ensureLevelAppender = (key) => {
-			if (key.charAt(0) === '$') { return; }
+			if (key.charAt(0) === '$') {
+				return;
+			}
 			const $key = '$' + key;
-			if (appenderKeys.indexOf($key) > -1) { return; }
+			if (appenderKeys.indexOf($key) > -1) {
+				return;
+			}
 
 			appenders[$key] = {
 				type: 'logLevelFilter',
 				appender: key,
 				level: (function () {
-					if (key === '_err') { return 'ERROR'; }
-					if (key === '_all') { return 'ALL'; }
+					if (key === '_err') {
+						return 'ERROR';
+					}
+					if (key === '_all') {
+						return 'ALL';
+					}
 					return getLevel(key, logLevel, defaultLogLevel);
-				}()),
+				})(),
 			};
 		};
 
@@ -146,7 +167,9 @@ const logSystem = (function () {
 			let appender = appenders[key];
 
 			// lazy appender
-			if (isFunction(appender)) { appenders[key] = appender = appender(); }
+			if (isFunction(appender)) {
+				appenders[key] = appender = appender();
+			}
 
 			ensureFilename(appender);
 			ensureLevelAppender(key);
@@ -156,13 +179,17 @@ const logSystem = (function () {
 	};
 
 	const performUpdateCategories = () => {
-		if (!shouldUpdateCategories) { return; }
+		if (!shouldUpdateCategories) {
+			return;
+		}
 		categories = getCategories();
 		shouldUpdateCategories = false;
 	};
 
 	const performUpdateDaemon = () => {
-		if (!shouldUpdateDaemon) { return; }
+		if (!shouldUpdateDaemon) {
+			return;
+		}
 		if (enable) {
 			if (config.daemon) {
 				Object.assign(appenders, {
@@ -183,13 +210,17 @@ const logSystem = (function () {
 	};
 
 	const performReloadConfigure = () => {
-		if (!shouldReloadConfigure) { return; }
+		if (!shouldReloadConfigure) {
+			return;
+		}
 		log4js.configure({ appenders, categories });
 		shouldReloadConfigure = false;
 	};
 
 	const performReloadEnableStatus = () => {
-		if (!shouldReloadEnableStatus) { return; }
+		if (!shouldReloadEnableStatus) {
+			return;
+		}
 		enable = config.enable;
 		shouldReloadEnableStatus = false;
 	};
@@ -242,7 +273,9 @@ const logSystem = (function () {
 			return loggers.has(category);
 		},
 		getLogger(category = defaultCategory) {
-			if (loggers.has(category)) { return loggers.get(category); }
+			if (loggers.has(category)) {
+				return loggers.get(category);
+			}
 
 			let origin = null;
 			let cache = {};
@@ -262,24 +295,38 @@ const logSystem = (function () {
 
 			const reflect = (name) => {
 				ensureLatest();
-				if (cache[name]) { return cache[name]; }
+				if (cache[name]) {
+					return cache[name];
+				}
 				return (cache[name] = enable ? origin[name].bind(origin) : noop);
 			};
 
 			const logger = {
 				[SymbolEnsureLatest]: ensureLatest,
-				get trace() { return reflect('trace'); },
-				get debug() { return reflect('debug'); },
-				get info() { return reflect('info'); },
-				get warn() { return reflect('warn'); },
-				get error() { return reflect('error'); },
-				get fatal() { return reflect('fatal'); },
+				get trace() {
+					return reflect('trace');
+				},
+				get debug() {
+					return reflect('debug');
+				},
+				get info() {
+					return reflect('info');
+				},
+				get warn() {
+					return reflect('warn');
+				},
+				get error() {
+					return reflect('error');
+				},
+				get fatal() {
+					return reflect('fatal');
+				},
 			};
 			loggers.set(category, logger);
 			return logger;
 		},
 	};
-}());
+})();
 
 export const defaultAppenders = {
 	out: {
@@ -307,7 +354,7 @@ export function setConfig(maybeKey, maybeVal) {
 
 	Object.assign(
 		config,
-		isObject(maybeKey) ? maybeKey : ({ [maybeKey]: maybeVal }),
+		isObject(maybeKey) ? maybeKey : { [maybeKey]: maybeVal },
 	);
 
 	if (prev.enable !== config.enable) {
@@ -319,17 +366,14 @@ export function setConfig(maybeKey, maybeVal) {
 	}
 
 	if (prev.logLevel !== config.logLevel) {
-		Object
-			.keys(logSystem.appenders)
-			.forEach((key) => {
-				const $key = '$' + key;
-				const levelAppender = logSystem.appenders[$key];
-				if (levelAppender) {
-					const newLevel = getLevel(key, config.logLevel);
-					newLevel && (levelAppender.level = newLevel);
-				}
-			})
-		;
+		Object.keys(logSystem.appenders).forEach((key) => {
+			const $key = '$' + key;
+			const levelAppender = logSystem.appenders[$key];
+			if (levelAppender) {
+				const newLevel = getLevel(key, config.logLevel);
+				newLevel && (levelAppender.level = newLevel);
+			}
+		});
 		logSystem.requestReloadConfigure();
 	}
 
@@ -350,8 +394,12 @@ export function overrideConsole(logger = logSystem.getLogger(), filter) {
 
 	const createReflection = (method) => {
 		return (...args) => {
-			if (isFunction(filter)) { args = filter(args, method, logger); }
-			if (args.length) { logger[method].apply(logger, args); }
+			if (isFunction(filter)) {
+				args = filter(args, method, logger);
+			}
+			if (args.length) {
+				logger[method].apply(logger, args);
+			}
 		};
 	};
 
@@ -398,7 +446,7 @@ export function hasLogger(category) {
 export function createLogger(category, description) {
 	if (logSystem.hasLogger(category)) {
 		throw new Error(
-			`Failed to create logger: "${category}" has already exists.`
+			`Failed to create logger: "${category}" has already exists.`,
 		);
 	}
 
@@ -410,7 +458,9 @@ export function createLogger(category, description) {
 	else {
 		let color;
 
-		if (isString(description)) { color = description; }
+		if (isString(description)) {
+			color = description;
+		}
 
 		const ref = {
 			category,
@@ -453,7 +503,8 @@ export function createLogger(category, description) {
 
 export const ensureLogger = function ensureLogger(category, description) {
 	return hasLogger(category) ?
-		getLogger(category) : createLogger(category, description);
+		getLogger(category) :
+		createLogger(category, description);
 };
 
 export const setLoggers = setConfig;
