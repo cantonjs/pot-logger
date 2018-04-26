@@ -314,6 +314,9 @@ const logSystem = (function () {
 				get info() {
 					return reflect('info');
 				},
+				get log() {
+					return reflect('info');
+				},
 				get warn() {
 					return reflect('warn');
 				},

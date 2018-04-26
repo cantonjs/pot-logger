@@ -27,6 +27,15 @@ describe('logger', () => {
 		expect(stripAnsi(arg)).toBe(`INFO ${message}`);
 	});
 
+	test('should `log()` work', () => {
+		const message = 'hello';
+		const log = jest.fn();
+		const { logger } = requireSandbox({ console: { log } });
+		logger.log(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`INFO ${message}`);
+	});
+
 	test('should `warn()` work', () => {
 		const message = 'hello';
 		const log = jest.fn();
