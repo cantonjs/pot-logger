@@ -1,6 +1,8 @@
 import log4js from 'log4js';
 import { join, resolve, isAbsolute, extname } from 'path';
 import chalk from 'chalk';
+import { open, close, remove } from 'fs-extra';
+import globby from 'globby';
 
 const isFunction = (src) => typeof src === 'function';
 const isObject = (src) => typeof src === 'object';
@@ -501,11 +503,29 @@ export function createLogger(category, description) {
 	return logSystem.getLogger(category);
 }
 
-export const ensureLogger = function ensureLogger(category, description) {
+export function ensureLogger(category, description) {
 	return hasLogger(category) ?
 		getLogger(category) :
 		createLogger(category, description);
-};
+}
+
+export function flush(options = {}) {
+	const { mode = 0o644, dir = false } = options;
+	const { logsDir } = config;
+
+	if (dir) return remove(logsDir);
+
+	const glob = (pattern) => globby(pattern, { absolute: true });
+	const each = (iterator) => (arr) => Promise.all(arr.map(iterator));
+	const logFilesPattern = `${logsDir}/*.log`;
+	const rotatedFilesPattern = `${logsDir}/*.log.[0-9]*`;
+	const renewFile = (file) => open(file, 'w', mode).then(close);
+	const removeFile = (file) => remove(file);
+	return Promise.all([
+		glob(logFilesPattern).then(each(renewFile)),
+		glob(rotatedFilesPattern).then(each(removeFile)),
+	]);
+}
 
 export const setLoggers = setConfig;
 export const logger = createLogger(defaultCategory, defaultAppenders.con);

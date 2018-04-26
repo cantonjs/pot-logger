@@ -1,6 +1,12 @@
-
 import { join } from 'path';
-import { pathExists, remove, readFile } from 'fs-extra';
+import {
+	pathExists,
+	remove,
+	readFile,
+	lstat,
+	writeFile,
+	mkdir,
+} from 'fs-extra';
 import { build, requireSandbox } from './utils';
 import stripAnsi from 'strip-ansi';
 import chalk from 'chalk';
@@ -143,7 +149,7 @@ describe('createLogger', () => {
 		logger.info(message);
 		const arg = log.mock.calls[0][0];
 		expect(arg).toBe(
-			`${chalk.green('INFO')} ${chalk.red(`[${category}]`)} ${message}`
+			`${chalk.green('INFO')} ${chalk.red(`[${category}]`)} ${message}`,
 		);
 	});
 
@@ -156,7 +162,7 @@ describe('createLogger', () => {
 		logger.info(message);
 		const arg = log.mock.calls[0][0];
 		expect(arg).toBe(
-			`${chalk.green('INFO')} ${chalk.red.bold(`[${category}]`)} ${message}`
+			`${chalk.green('INFO')} ${chalk.red.bold(`[${category}]`)} ${message}`,
 		);
 	});
 });
@@ -259,11 +265,9 @@ describe('levels', () => {
 
 	test('should work if `logLevel` is `Object`', () => {
 		const log = jest.fn();
-		const {
-			setConfig,
-			createLogger,
-			logger,
-		} = requireSandbox({ console: { log } });
+		const { setConfig, createLogger, logger } = requireSandbox({
+			console: { log },
+		});
 		const alt = createLogger('alt');
 		logger.trace('a');
 		alt.trace('a');
@@ -302,9 +306,9 @@ describe('overrideConsole', () => {
 		const message = 'world';
 		const log = jest.fn();
 		const fakeConsole = { log };
-		const {
-			overrideConsole, resetConsole,
-		} = requireSandbox({ console: fakeConsole });
+		const { overrideConsole, resetConsole } = requireSandbox({
+			console: fakeConsole,
+		});
 		overrideConsole();
 		fakeConsole.log('hello');
 		resetConsole();
@@ -316,9 +320,9 @@ describe('overrideConsole', () => {
 	test('should `overrideConsoleInRuntime()` work', async () => {
 		const log = jest.fn();
 		const fakeConsole = { log };
-		const {
-			overrideConsoleInRuntime
-		} = requireSandbox({ console: fakeConsole });
+		const { overrideConsoleInRuntime } = requireSandbox({
+			console: fakeConsole,
+		});
 
 		fakeConsole.log('a');
 		await overrideConsoleInRuntime(async () => {
@@ -333,10 +337,7 @@ describe('overrideConsole', () => {
 
 describe('daemon', () => {
 	const logsDir = join(__dirname, 'logs');
-
-	const removeLogsDir = async () => {
-		await remove(logsDir);
-	};
+	const removeLogsDir = () => remove(logsDir);
 
 	beforeEach(removeLogsDir);
 	afterEach(removeLogsDir);
@@ -469,5 +470,55 @@ describe('daemon', () => {
 		await delay(100);
 		const all = await readFile(join(logsDir, 'all.log'), 'utf-8');
 		expect(/\[ERROR\] out - hello\s*$/.test(all)).toBe(true);
+	});
+});
+
+describe('flush', () => {
+	const logsDir = join(__dirname, 'logs');
+	const rotatedFile = join(logsDir, 'backup.log.100');
+
+	beforeEach(async () => {
+		await remove(logsDir);
+		await mkdir(logsDir);
+		await writeFile(rotatedFile, '');
+	});
+	afterEach(() => remove(logsDir));
+
+	test('should renew all `*.log` files', async () => {
+		const { setConfig, logger, flush } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
+		logger.info('hello');
+		await delay(100);
+		let out = await lstat(join(logsDir, 'out.log'));
+		let all = await lstat(join(logsDir, 'all.log'));
+		expect(out.size > 0).toBe(true);
+		expect(all.size > 0).toBe(true);
+		await flush();
+		out = await lstat(join(logsDir, 'out.log'));
+		all = await lstat(join(logsDir, 'all.log'));
+		expect(out.size).toBe(0);
+		expect(all.size).toBe(0);
+	});
+
+	test('should remove all rotated files', async () => {
+		const { setConfig, logger, flush } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
+		logger.info('hello');
+		await delay(100);
+		let rotatedExists = await pathExists(rotatedFile);
+		expect(rotatedExists).toBe(true);
+		await flush();
+		rotatedExists = await pathExists(rotatedFile);
+		expect(rotatedExists).toBe(false);
+	});
+
+	test('should remove logsDir is `dir = true`', async () => {
+		const { setConfig, flush } = requireSandbox();
+		setConfig({ daemon: true, logsDir });
+		let logsDirExists = await pathExists(logsDir);
+		expect(logsDirExists).toBe(true);
+		await flush({ dir: true });
+		logsDirExists = await pathExists(logsDir);
+		expect(logsDirExists).toBe(false);
 	});
 });
