@@ -513,10 +513,9 @@ export function ensureLogger(category, description) {
 }
 
 export function flush(options = {}) {
-	const { mode = 0o644, dir = false } = options;
-	const { logsDir } = config;
+	const { mode = 0o644, removeDir = false, logsDir = config.logsDir } = options;
 
-	if (dir) return remove(logsDir);
+	if (removeDir) return remove(logsDir);
 
 	const glob = (pattern) => globby(pattern, { absolute: true });
 	const each = (iterator) => (arr) => Promise.all(arr.map(iterator));

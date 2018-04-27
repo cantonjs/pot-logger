@@ -5,6 +5,7 @@ import {
 	readFile,
 	lstat,
 	writeFile,
+	ensureDir,
 	mkdir,
 } from 'fs-extra';
 import { build, requireSandbox } from './utils';
@@ -521,13 +522,24 @@ describe('flush', () => {
 		expect(rotatedExists).toBe(false);
 	});
 
-	test('should remove logsDir is `dir = true`', async () => {
+	test('should remove logsDir is `removeDir = true`', async () => {
 		const { setConfig, flush } = requireSandbox();
 		setConfig({ daemon: true, logsDir });
 		let logsDirExists = await pathExists(logsDir);
 		expect(logsDirExists).toBe(true);
-		await flush({ dir: true });
+		await flush({ removeDir: true });
 		logsDirExists = await pathExists(logsDir);
 		expect(logsDirExists).toBe(false);
+	});
+
+	test('should `logsDir` option work', async () => {
+		const { setConfig, flush } = requireSandbox();
+		setConfig({ daemon: true, logsDir: __dirname });
+		const file = 'foo.log.1';
+		await ensureDir(logsDir);
+		await writeFile(join(logsDir, file), '');
+		await flush({ logsDir });
+		const exists = await pathExists(join(logsDir, file));
+		expect(exists).toBe(false);
 	});
 });
