@@ -285,7 +285,9 @@ Flush log files.
 
 1.  `options` (Object)
 
-* `dir` (Boolean): Remove whole directory. Defaults to `false`
+* `removeDir` (Boolean): Remove whole directory. Defaults to `false`
+* `logsDir` (String): Customize logs directory. Defaults to `config.logsDir`
+* `mode` (Number): File mode (permission and sticky bits) when renewing log file. Defaults to `0o666` (readable and writable)
 
 ###### Returns
 
