@@ -197,6 +197,30 @@ describe('createLogger', () => {
 			`${chalk.green('INFO')} ${chalk.red.bold(`[${category}]`)} ${message}`,
 		);
 	});
+
+	test('appender with level', () => {
+		const category = 'hello';
+		const message = 'world';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, { level: 'TRACE' });
+		logger.trace(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`TRACE [${category}] ${message}`);
+	});
+
+	test('appender with maxLevel', () => {
+		const category = 'hello';
+		const message = 'world';
+		const log = jest.fn();
+		const { createLogger } = requireSandbox({ console: { log } });
+		const logger = createLogger(category, { maxLevel: 'ERROR' });
+		logger.error(message);
+		logger.fatal('fatal');
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`ERROR [${category}] ${message}`);
+		expect(log.mock.calls.length).toBe(1);
+	});
 });
 
 describe('getLogger', () => {

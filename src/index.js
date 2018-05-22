@@ -71,6 +71,7 @@ const createAppender = function createAppender(category, description, daemon) {
 	}
 	else {
 		return {
+			...other,
 			type: 'console',
 			layout: {
 				type: 'pattern',
@@ -149,14 +150,10 @@ const logSystem = (function () {
 			appender.filename = isAbsolute(name) ? name : join(logsDir, name);
 		};
 
-		const ensureLevelAppender = (key) => {
-			if (key.charAt(0) === '$') {
-				return;
-			}
+		const ensureLevelAppender = (key, appender) => {
+			if (key.charAt(0) === '$') return;
 			const $key = '$' + key;
-			if (appenderKeys.indexOf($key) > -1) {
-				return;
-			}
+			if (~appenderKeys.indexOf($key)) return;
 
 			appenders[$key] = {
 				type: 'logLevelFilter',
@@ -164,9 +161,10 @@ const logSystem = (function () {
 				level: (function () {
 					if (key === '_err') return 'ERROR';
 					if (key === '_all') return 'ALL';
+					if (appender.level) return appender.level;
 					return getLevel(key, logLevel, defaultLogLevel);
 				})(),
-				maxLevel: 'MARK',
+				maxLevel: appender.maxLevel || 'MARK',
 			};
 		};
 
@@ -179,7 +177,7 @@ const logSystem = (function () {
 			}
 
 			ensureFilename(appender);
-			ensureLevelAppender(key);
+			ensureLevelAppender(key, appender);
 		});
 
 		shouldUpdateAppenders = false;
@@ -362,7 +360,7 @@ export function setConfig(maybeKey, maybeVal) {
 			const levelAppender = logSystem.appenders[$key];
 			if (levelAppender) {
 				const newLevel = getLevel(key, config.logLevel);
-				newLevel && (levelAppender.level = newLevel);
+				if (newLevel) levelAppender.level = newLevel;
 			}
 		});
 		logSystem.requestReloadConfigure();
@@ -486,6 +484,8 @@ export function createLogger(category, description) {
 	}
 
 	logSystem.appenders[category] = appender;
+
+	// TODO: set level appender
 
 	logSystem.requestUpdateAppenders();
 	logSystem.requestUpdateCategories();
