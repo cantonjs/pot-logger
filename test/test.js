@@ -544,7 +544,7 @@ describe('flush', () => {
 		const { setConfig, logger, flush } = requireSandbox();
 		setConfig({ daemon: true, logsDir });
 		logger.info('hello');
-		await delay(100);
+		await delay(300);
 		let out = await lstat(join(logsDir, 'out.log'));
 		let all = await lstat(join(logsDir, 'all.log'));
 		expect(out.size > 0).toBe(true);
