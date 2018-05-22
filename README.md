@@ -347,6 +347,8 @@ You could create a custom logger by calling `createLogger(category, appenderDesc
 **If `appenderDescription` is an \<Object\>, these options are available:**
 
 * `color` (String): The category text color. Support all [chalk.js](https://github.com/chalk/chalk) colors. Support dot notation (i.e. `red.bold`). Only work for non-daemon (terminal) mode.
+* `level` (String): Custom log level.
+* `maxLevel` (String): Custom max log level.
 * `file` (Boolean) [optional]: Use new log file or not. If `true`, the log file name will be the category name. Defaults to `false`. Only work for daemon mode.
 * `maxLogSize` (Integer) [optional]: The maximum size (in bytes) for the log file. If not specified, then no log rolling will happen. Only work for daemon mode.
 * `backups` (Integer) [optional]: The number of old log files to keep during log rolling. Defaults to 5. Only work for daemon mode.
