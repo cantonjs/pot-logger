@@ -111,12 +111,14 @@ npm i pot-logger
 
 Default logger. A logger is a little bit like `console`, it has these methods:
 
+* `all` (grey)
 * `trace` (blue)
 * `debug` (cyan)
 * `info` (green) [alias `log`]
 * `warn` (yellow)
 * `error` (red)
 * `fatal` (magenta)
+* `mark` (grey)
 
 ###### Ways to import `logger` module
 

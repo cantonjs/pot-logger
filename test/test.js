@@ -83,6 +83,28 @@ describe('logger', () => {
 		const arg = log.mock.calls[0][0];
 		expect(stripAnsi(arg)).toBe(`TRACE ${message}`);
 	});
+
+	test('should `all()` work', () => {
+		const message = 'hello';
+		const log = jest.fn();
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ logLevel: 'ALL' });
+		logger.all(message);
+		const arg = log.mock.calls[0][0];
+		expect(stripAnsi(arg)).toBe(`ALL ${message}`);
+	});
+
+	test('should `mark()` work', () => {
+		const message = 'hello';
+		const log = jest.fn();
+		const { setConfig, logger } = requireSandbox({ console: { log } });
+		setConfig({ logLevel: 'ALL' });
+		logger.mark(message);
+		// console.log('log.mock.calls', log.mock.calls);
+
+		// const arg = log.mock.calls[0][0];
+		// expect(stripAnsi(arg)).toBe(`MARK ${message}`);
+	});
 });
 
 describe('createLogger', () => {

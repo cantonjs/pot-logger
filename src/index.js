@@ -162,14 +162,11 @@ const logSystem = (function () {
 				type: 'logLevelFilter',
 				appender: key,
 				level: (function () {
-					if (key === '_err') {
-						return 'ERROR';
-					}
-					if (key === '_all') {
-						return 'ALL';
-					}
+					if (key === '_err') return 'ERROR';
+					if (key === '_all') return 'ALL';
 					return getLevel(key, logLevel, defaultLogLevel);
 				})(),
+				maxLevel: 'MARK',
 			};
 		};
 
@@ -189,9 +186,7 @@ const logSystem = (function () {
 	};
 
 	const performUpdateCategories = () => {
-		if (!shouldUpdateCategories) {
-			return;
-		}
+		if (!shouldUpdateCategories) return;
 		categories = getCategories();
 		shouldUpdateCategories = false;
 	};
@@ -295,10 +290,7 @@ const logSystem = (function () {
 					cache = {};
 				}
 
-				if (!origin) {
-					origin = log4js.getLogger(category);
-				}
-
+				if (!origin) origin = log4js.getLogger(category);
 				return origin;
 			};
 
@@ -308,29 +300,18 @@ const logSystem = (function () {
 				return (cache[name] = enable ? origin[name].bind(origin) : noop);
 			};
 
+			// prettier-ignore
 			const logger = {
 				[SymbolEnsureLatest]: ensureLatest,
-				get trace() {
-					return reflect('trace');
-				},
-				get debug() {
-					return reflect('debug');
-				},
-				get info() {
-					return reflect('info');
-				},
-				get log() {
-					return reflect('info');
-				},
-				get warn() {
-					return reflect('warn');
-				},
-				get error() {
-					return reflect('error');
-				},
-				get fatal() {
-					return reflect('fatal');
-				},
+				get all() { return reflect('all'); },
+				get trace() { return reflect('trace'); },
+				get debug() { return reflect('debug'); },
+				get info() { return reflect('info'); },
+				get log() { return reflect('info'); },
+				get warn() { return reflect('warn'); },
+				get error() { return reflect('error'); },
+				get fatal() { return reflect('fatal'); },
+				get mark() { return reflect('mark'); },
 			};
 			loggers.set(category, logger);
 			return logger;
