@@ -1,75 +1,76 @@
 {
-  "name": "pot-logger",
-  "description": "A powerful log system for node.js, with zero configuration",
-  "version": "0.5.0",
-  "main": "lib/index",
-  "files": [
-    "*.md",
-    "lib"
-  ],
-  "scripts": {
-    "start": "yarn test -- --watchAll",
-    "test": "cross-env NODE_ENV=development jest",
-    "prebuild": "rimraf lib",
-    "build": "babel src -d lib",
-    "watch:build": "babel -w src -d lib",
-    "preversion": "yarn test && yarn build"
-  },
-  "author": "cap32",
-  "repository": "cantonjs/pot-logger",
-  "engines": {
-    "node": ">=4"
-  },
-  "keywords": [
-    "console",
-    "logger",
-    "level",
-    "log",
-    "log-system",
-    "daemon"
-  ],
-  "license": "MIT",
-  "dependencies": {
-    "chalk": "^2.3.0",
-    "fs-extra": "^5.0.0",
-    "globby": "^8.0.1",
-    "log4js": "^2.5.3"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.13.2",
-    "babel-jest": "21.x",
-    "babel-plugin-transform-es2015-destructuring": "^6.19.0",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.18.0",
-    "babel-plugin-transform-es2015-parameters": "^6.18.0",
-    "babel-plugin-transform-es2015-spread": "^6.22.0",
-    "babel-polyfill": "^6.13.0",
-    "babel-preset-stage-0": "^6.5.0",
-    "babel-register": "^6.11.6",
-    "cross-env": "^4.0.0",
-    "delay": "^2.0.0",
-    "eslint": "^4.19.1",
-    "eslint-config-cantonjs": "^0.2.0",
-    "eslint-plugin-import": "^2.11.0",
-    "eslint-plugin-jest": "^21.15.1",
-    "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0",
-    "eslint-plugin-standard": "^3.1.0",
-    "jest": "21.x",
-    "json5": "^0.5.1",
-    "prettier-eslint-cli": "^4.7.1",
-    "rimraf": "^2.6.2",
-    "sandboxed-module": "^2.0.3",
-    "strip-ansi": "^4.0.0"
-  },
-  "jest": {
-    "collectCoverageFrom": [
-      "src/**/*.js"
-    ],
-    "modulePathIgnorePatterns": [
-      "node_modules",
-      "lib",
-      "test/logs"
-    ]
-  }
+	"name": "pot-logger",
+	"description": "A powerful log system for node.js, with zero configuration",
+	"version": "0.5.0",
+	"main": "lib/index",
+	"files": [
+		"*.md",
+		"lib"
+	],
+	"scripts": {
+		"start": "yarn test -- --watchAll",
+		"test": "cross-env NODE_ENV=development jest --runInBand",
+		"prebuild": "rimraf lib",
+		"build": "babel src -d lib",
+		"watch:build": "babel -w src -d lib",
+		"preversion": "yarn test && yarn build"
+	},
+	"author": "cap32",
+	"repository": "cantonjs/pot-logger",
+	"engines": {
+		"node": ">=4"
+	},
+	"keywords": [
+		"console",
+		"logger",
+		"level",
+		"log",
+		"log-system",
+		"daemon"
+	],
+	"license": "MIT",
+	"dependencies": {
+		"chalk": "^2.3.0",
+		"deasync": "^0.1.13",
+		"fs-extra": "^5.0.0",
+		"globby": "^8.0.1",
+		"log4js": "^2.6.0"
+	},
+	"devDependencies": {
+		"babel-cli": "^6.26.0",
+		"babel-core": "^6.13.2",
+		"babel-jest": "21.x",
+		"babel-plugin-transform-es2015-destructuring": "^6.19.0",
+		"babel-plugin-transform-es2015-modules-commonjs": "^6.18.0",
+		"babel-plugin-transform-es2015-parameters": "^6.18.0",
+		"babel-plugin-transform-es2015-spread": "^6.22.0",
+		"babel-polyfill": "^6.13.0",
+		"babel-preset-stage-0": "^6.5.0",
+		"babel-register": "^6.11.6",
+		"cross-env": "^4.0.0",
+		"delay": "^2.0.0",
+		"eslint": "^4.19.1",
+		"eslint-config-cantonjs": "^0.2.0",
+		"eslint-plugin-import": "^2.11.0",
+		"eslint-plugin-jest": "^21.15.1",
+		"eslint-plugin-node": "^6.0.1",
+		"eslint-plugin-promise": "^3.7.0",
+		"eslint-plugin-standard": "^3.1.0",
+		"jest": "21.x",
+		"json5": "^0.5.1",
+		"prettier-eslint-cli": "^4.7.1",
+		"rimraf": "^2.6.2",
+		"sandboxed-module": "^2.0.3",
+		"strip-ansi": "^4.0.0"
+	},
+	"jest": {
+		"collectCoverageFrom": [
+			"src/**/*.js"
+		],
+		"modulePathIgnorePatterns": [
+			"node_modules",
+			"lib",
+			"test/logs"
+		]
+	}
 }

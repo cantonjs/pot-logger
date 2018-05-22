@@ -1,4 +1,3 @@
-
 import { resolve } from 'path';
 import { readFileSync, outputFileSync } from 'fs-extra';
 import SandboxedModule from 'sandboxed-module';

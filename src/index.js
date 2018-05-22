@@ -3,11 +3,19 @@ import { join, resolve, isAbsolute, extname } from 'path';
 import chalk from 'chalk';
 import { open, close, remove } from 'fs-extra';
 import globby from 'globby';
+import deasync from 'deasync';
 
 const isFunction = (src) => typeof src === 'function';
 const isObject = (src) => typeof src === 'object';
 const isString = (src) => typeof src === 'string';
 const noop = () => {};
+
+const shutdown = deasync(log4js.shutdown);
+
+log4js.configure({
+	appenders: { out: { type: 'stdout' } },
+	categories: { default: { appenders: ['out'], level: 'info' } },
+});
 
 const defaultCategory = 'out';
 const defaultLogLevel = 'INFO';
@@ -212,11 +220,10 @@ const logSystem = (function () {
 	};
 
 	const performReloadConfigure = () => {
-		if (!shouldReloadConfigure) {
-			return;
+		if (shouldReloadConfigure) {
+			shutdown();
+			log4js.configure({ appenders, categories });
 		}
-		log4js.configure({ appenders, categories });
-		shouldReloadConfigure = false;
 	};
 
 	const performReloadEnableStatus = () => {
@@ -297,9 +304,7 @@ const logSystem = (function () {
 
 			const reflect = (name) => {
 				ensureLatest();
-				if (cache[name]) {
-					return cache[name];
-				}
+				if (cache[name]) return cache[name];
 				return (cache[name] = enable ? origin[name].bind(origin) : noop);
 			};
 
